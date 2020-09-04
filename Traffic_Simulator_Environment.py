@@ -1,54 +1,148 @@
+from typing import List
+import numpy as np
 
+class Intersection():
+    def __init__(self, name : str, xpos : int, ypos : int):
+        self.name = name
+        self.x = xpos
+        self.y = ypos
+
+class Road():
+    def __init__(self, name : str, start : Intersection, end : Intersection, len: float, lim: float):
+        self.name = name
+        self.start = start
+        self.end = end
+        self.len = len
+        self.lim = lim
+
+        self.cars = []
+
+class Path():
+    def __init__(self, name : str, roads : List[Road], current : float):
+        self.roads = roads
+        self.current = current
+
+class Car():
+    def __init__(self, path : Path, maxSpd= 20.0, info=False, render = False, view = None):
+        self.path = path
+        self.road = path.roads[0]
+        self.maxSpd = maxSpd
+        self.info = info
+        self.render = render
+        self.view = view
+    
+        self.car_rect = None
+
+        self.tot_stages = len(self.path.roads)
+        self.stage = 0
+        self.progress = 0.0
+        self.done = False
+
+        self.xpos = self.road.start.x
+        self.ypos = self.road.start.y
+
+        dx = self.road.end.x - self.road.start.x
+        dy = -self.road.end.y - self.road.start.y
+        vec = complex(dx, dy)
+        self.rot = np.angle(vec, deg=True)
+    
+    def step(self, render=False):
+        self.render = render
+
+        self.progress += self.maxSpd
+        self.xpos = (self.road.start.x * (self.road.len - self.progress) + self.road.end.x * self.progress)/self.road.len
+        self.ypos = (self.road.start.y * (self.road.len - self.progress) + self.road.end.y * self.progress)/self.road.len
+        if self.progress >= self.road.len:
+            self.stage += 1
+            self.xpos = self.road.end.x
+            self.ypos = self.road.end.y
+            self.progress = 0
+            if self.stage <= self.tot_stages:
+                self.road = self.path.roads[self.stage]
+                dx = self.road.end.x - self.road.start.x
+                dy = -self.road.end.y - self.road.start.y
+                vec = complex(dx, dy)
+                self.rot = np.angle(vec, deg=True)
+            else:
+                self.done = True
+        if self.info:
+            print(str(self.xpos) + ", " + str(self.ypos))
+            print(self.rot)
+        
+        if self.render:
+            if self.car_rect == None:
+                self.car_rect = self.view.addCar(self.xpos, self.ypos)
+            else:
+                self.car_rect.setPos(self.xpos, self.ypos)
 
 class Traffic_Simulator_Env():
 
     def __init__(self):
         self.intersections = {}
-        self.roads = set()
-        self.paths = []
+        self.roads = {}
+        self.paths = {}
+        self.cars = []
+        self.view = None
 
-        self.buildEnv()
-        print(self.intersections)
-        print(self.roads)
-        print(self.paths)
+        self.isRendering = False
+
+    def setView(self, viewTab):
+        self.view = viewTab
 
     def buildEnv(self):
-        self.addIntersection("a", 0, 0)
-        self.addIntersection("b", 400, 0)
-        self.addIntersection("c", 400, 400)
+        a = self.addIntersection("a", 0, 0)
+        b = self.addIntersection("b", 100, 0)
+        c = self.addIntersection("c", 100, 100)
+        d = self.addIntersection("d", 200, 100)
 
-        self.addRoad("a", "b")
-        self.addRoad("b", "a")
-        self.addRoad("b", "c")
-        self.addRoad("c", "b")
+        ab = self.addRoad(a, b, 400, 60)
+        bc = self.addRoad(b, a, 400, 60)
+        cd = self.addRoad(a, c, 400, 60)
 
-        self.addPath([("a", "b"), ("b", "c"), ("c", "b"), ("b", "a")])
+        path1 = self.addPath([ab, bc, cd], 60)
 
-    def addIntersection(self, name, xPos, yPos):
-        self.intersections.update({name :(xPos, yPos)})
+        car1 = self.addCar(path1, self.view)
 
-    def addRoad(self, start, end):
-        miss = False
-        if start not in self.intersections:
-            print("Intersection {} missing!".format(start))
-            miss = True
-        if end not in self.intersections:
-            print("Intersection {} missing!".format(end))
-            miss = True
-        if miss:
-            return
-        name = start + " to " + end
-        self.roads.add((start, end))
+    def reset(self):
+        self.buildEnv()
+        state = None
+        return state
 
-    def addPath(self, path):
-        miss = False
-        for i in range(len(path)):
-            if path[i] not in self.roads:
-                print("Road {} missing!".format(path[0]))
-                miss = True
-        if miss:
-            return
-        self.paths.append(path)
+    def render(self):
+        self.isRendering = True
 
+    def step(self, action):
+        for car in self.cars:
+            car.step(render=self.isRendering)
+        state_ = None
+        reward = None
+        term = None
+        info = None
+        return state_, reward, term, info 
+        
 
+    def addIntersection(self, name : str, x : int, y : int):
+        add = Intersection(name, x, y)
+        self.intersections[add.name] = add
+        return add
+
+    def addRoad(self, start : Intersection, end : Intersection, len : float, spdLim : float):
+        name = start.name+"-"+end.name
+        lim = spdLim/3600*1000
+        add = Road(name, start, end, len, lim)
+        self.roads[add.name] = add
+        return add
+
+    def addPath(self, roads : List[Road], current : float):
+        name = roads[0].name
+        for i in range(len(roads) - 1):
+            name += "," + roads[i+1].name
+        add = Path(name, roads, current)
+        return add
+
+    def addCar(self, path : Path, viewTab):
+        add = Car(path, info=True, view=viewTab, render=True)
+        self.cars.append(add)
+        return add
+        
 bruh = Traffic_Simulator_Env()

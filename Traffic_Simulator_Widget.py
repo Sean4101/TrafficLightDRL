@@ -15,13 +15,16 @@ from Traffic_Simulator_Environment import Traffic_Simulator_Env
 TITLE_TEXT = "Traffic Simulator"
 FONTSIZE = 12
 
+CAR_WIDTH = 2
+CAR_HEIGHT = 3
+
 class mainWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, env, parent=None):
         super (mainWidget, self).__init__(parent)
 
         self.setGeometry(0, 0, 1500, 900)
         self.setWindowTitle(TITLE_TEXT)
-        self.env = Traffic_Simulator_Env()
+        self.env = env
         self.ViewTab = ViewTab(self.env)
         self.paramGroup = ParamGroup()
         self.trainGroup = TrainGroup()
@@ -65,7 +68,11 @@ class ViewTab(QTabWidget):
         self.addTab(self.tab2,"Plot")
         self.Tab1_UI()
         self.Tab2_UI()
-        self.addCar()
+
+        self.intersections = {}
+        self.roads = {}
+        self.paths = {}
+        self.cars = []
 
     def Tab1_UI(self):
         layout = QVBoxLayout()
@@ -77,29 +84,12 @@ class ViewTab(QTabWidget):
         layout.addWidget(self.plot)
         self.tab2.setLayout(layout)
 
-    def addCar(self):
-        self.rect = self.scene.addRect(0, 0, 30, 40, self.blackPen, self.redBrush)
-        self.rect.setFlag(QGraphicsItem.ItemIsMovable)
-        self.path = self.env.paths[0]
-        self.stage = 0
-        self.progress = 0
+    def addCar(self, x, y):
+        car = self.scene.addRect(x, y, CAR_WIDTH, CAR_HEIGHT, self.blackPen, self.redBrush)
+        return car
 
     def moveCar(self):
-        if self.progress >= 100:
-            self.progress = 0
-            self.stage += 1
-        self.progress += 10
-        
-        start = self.path[self.stage][0]
-        end = self.path[self.stage][1]
-
-        startCord = self.env.intersections.get(start)
-        endCord = self.env.intersections.get(end)
-        xpos = (startCord[0]*(100-self.progress)/100 + endCord[0]*self.progress/100)
-        ypos = (startCord[1]*(100-self.progress)/100 + endCord[1]*self.progress/100)
-
-        self.rect.setPos(xpos, ypos)
-        print(self.rect.x())
+        self.env.step(0)
 
 class ParamGroup(QGroupBox):
     
@@ -115,6 +105,7 @@ class ParamGroup(QGroupBox):
         layout = QGridLayout()
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
+        layout.addWidget(self.gammaSpin,2,0,1,1)
         self.setLayout(layout)
 
 class TrainGroup(QGroupBox):
@@ -130,6 +121,7 @@ class TrainGroup(QGroupBox):
         self.setLayout(layout)
 
 class outputPlotSize(QWidget):
+
 	def __init__(self, fontsize, parent=None):
 		super(outputPlotSize, self).__init__(parent)
 		self.figure = Figure(figsize=(6,3))
@@ -144,6 +136,7 @@ class outputPlotSize(QWidget):
 		self.ax = self.figure.add_subplot(111)
 
 class spinBlock(QGroupBox):
+    
 	def __init__(self, title, minValue, maxValue, double = False, step = 1, Decimals = 2, parent=None):
 		super(spinBlock, self).__init__(parent)
 		if (double):
@@ -162,6 +155,10 @@ class spinBlock(QGroupBox):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    main = mainWidget()
+    env=Traffic_Simulator_Env()
+    main = mainWidget(env)
+    env.setView(main.ViewTab)
+    env.render()
+    env.reset()
     main.show()
     os._exit(app.exec_())
