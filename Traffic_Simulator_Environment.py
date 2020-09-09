@@ -45,43 +45,50 @@ class Car():
         dy = -self.road.end.y - self.road.start.y
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
+
+        if self.render:
+            self.car_rect = self.view.addCar(self.xpos, self.ypos)
+            self.car_rect.setRotation(self.rot)
     
     def step(self, render=False):
         self.render = render
 
+        self.road = self.path.roads[self.stage]
         self.progress += self.maxSpd
-        self.xpos = (self.road.start.x * (self.road.len - self.progress) + self.road.end.x * self.progress)/self.road.len
-        self.ypos = (self.road.start.y * (self.road.len - self.progress) + self.road.end.y * self.progress)/self.road.len
         if self.progress >= self.road.len:
             self.stage += 1
-            self.xpos = self.road.end.x
-            self.ypos = self.road.end.y
-            self.progress = 0
-            if self.stage <= self.tot_stages:
-                self.road = self.path.roads[self.stage]
-                dx = self.road.end.x - self.road.start.x
-                dy = -self.road.end.y - self.road.start.y
-                vec = complex(dx, dy)
-                self.rot = np.angle(vec, deg=True)
-            else:
+            if self.stage >= self.tot_stages:
                 self.done = True
-        if self.info:
-            print(str(self.xpos) + ", " + str(self.ypos))
-            print(self.rot)
+                self.leave()
+                return
+            self.road = self.path.roads[self.stage]
+            self.progress = 0
+        self.xpos = self.road.start.x * (1 - self.progress/self.road.len) + self.road.end.x * self.progress/self.road.len
+        self.ypos = self.road.start.y * (1 - self.progress/self.road.len) + self.road.end.y * self.progress/self.road.len
+        dx = self.road.end.x - self.road.start.x
+        dy = -self.road.end.y + self.road.start.y
+        vec = complex(dx, dy)
+        self.rot = np.angle(vec, deg=True)
         
         if self.render:
             if self.car_rect == None:
                 self.car_rect = self.view.addCar(self.xpos, self.ypos)
             else:
                 self.car_rect.setPos(self.xpos, self.ypos)
+                self.car_rect.setRotation(self.rot)
+        
+        if self.info:
+            print(str(self.xpos) + ", " + str(self.ypos))
+            print(self.rot)
+    
+    def leave(self):
+        if self.render:
+            self.view.scene.removeItem(self.car_rect)
+
 
 class Traffic_Simulator_Env():
 
     def __init__(self):
-        self.intersections = {}
-        self.roads = {}
-        self.paths = {}
-        self.cars = []
         self.view = None
 
         self.isRendering = False
@@ -96,14 +103,26 @@ class Traffic_Simulator_Env():
         d = self.addIntersection("d", 200, 100)
 
         ab = self.addRoad(a, b, 400, 60)
-        bc = self.addRoad(b, a, 400, 60)
-        cd = self.addRoad(a, c, 400, 60)
+        bc = self.addRoad(b, c, 400, 60)
+        cd = self.addRoad(c, d, 400, 60)
 
         path1 = self.addPath([ab, bc, cd], 60)
 
-        car1 = self.addCar(path1, self.view)
+        if self.isRendering:
+            for key in self.intersections:
+                inte = self.intersections[key]
+                self.view.addInte(inte.x, inte.y)
+            for key in self.roads:
+                road = self.roads[key]
+                self.view.addRoad(road.start.x, road.start.y, road.end.x, road.end.y)
+
+        car1 = self.addCar(path1, 40)
 
     def reset(self):
+        self.intersections = {}
+        self.roads = {}
+        self.paths = {}
+        self.cars = []
         self.buildEnv()
         state = None
         return state
@@ -112,8 +131,11 @@ class Traffic_Simulator_Env():
         self.isRendering = True
 
     def step(self, action):
-        for car in self.cars:
+        for index, car in enumerate(self.cars):
             car.step(render=self.isRendering)
+            if car.done:
+                #self.view.scene.removeItem(car.car_rect)
+                self.cars.pop(index)
         state_ = None
         reward = None
         term = None
@@ -140,9 +162,7 @@ class Traffic_Simulator_Env():
         add = Path(name, roads, current)
         return add
 
-    def addCar(self, path : Path, viewTab):
-        add = Car(path, info=True, view=viewTab, render=True)
+    def addCar(self, path : Path, maxSpd=20.0):
+        add = Car(path, maxSpd=maxSpd, view=self.view, render=True)
         self.cars.append(add)
         return add
-        
-bruh = Traffic_Simulator_Env()

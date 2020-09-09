@@ -1,5 +1,5 @@
-import sys
-import os
+import math
+import numpy as np
 
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -17,6 +17,9 @@ FONTSIZE = 12
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
+
+INTERSECTION_DIAM = 15
+ROAD_WIDTH = 12
 
 class mainWidget(QWidget):
     def __init__(self, env, parent=None):
@@ -59,8 +62,10 @@ class ViewTab(QTabWidget):
         self.envView = QGraphicsView(self.scene, self.tab1)
         self.envView.setGeometry(0, 0, 600, 600)
         self.redBrush = QBrush(Qt.red)
-        self.blueBruch = QBrush(Qt.blue)
+        self.blueBrush = QBrush(Qt.blue)
+        self.grayBrush = QBrush(Qt.gray)
         self.blackPen = QPen(Qt.black)
+        self.grayPen = QPen(Qt.gray)
         
         self.plot = outputPlotSize(FONTSIZE)
 
@@ -85,11 +90,29 @@ class ViewTab(QTabWidget):
         self.tab2.setLayout(layout)
 
     def addCar(self, x, y):
-        car = self.scene.addRect(x, y, CAR_WIDTH, CAR_HEIGHT, self.blackPen, self.redBrush)
+        car = self.scene.addRect(x-CAR_HEIGHT/2, y-CAR_WIDTH/2, CAR_HEIGHT, CAR_WIDTH, self.blackPen, self.redBrush)
         return car
 
     def moveCar(self):
-        self.env.step(0)
+        self.env.step(1)
+    
+    def addInte(self, x, y):
+        inte = self.scene.addEllipse(x-INTERSECTION_DIAM/2, y-INTERSECTION_DIAM/2, INTERSECTION_DIAM, INTERSECTION_DIAM, self.grayPen, self.grayBrush)
+
+    def addRoad(self, x1, y1, x2, y2):
+        length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + ROAD_WIDTH
+        dx = x2 - x1
+        dy = y2 - y1
+        vec = complex(dx, dy)
+        rot = np.angle(vec)
+        rotd = np.angle(vec, deg=True)
+
+        x = x1 - math.sin(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
+        y = y1 + math.cos(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
+
+        road = self.scene.addRect(0, 0, length, ROAD_WIDTH, self.grayPen, self.grayBrush)
+        road.setRotation(rotd)
+        road.setPos(x, y)
 
 class ParamGroup(QGroupBox):
     
@@ -153,12 +176,3 @@ class spinBlock(QGroupBox):
 		layout.addWidget(self.spin)     
 		self.setLayout(layout)
 
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    env=Traffic_Simulator_Env()
-    main = mainWidget(env)
-    env.setView(main.ViewTab)
-    env.render()
-    env.reset()
-    main.show()
-    os._exit(app.exec_())
