@@ -14,6 +14,12 @@ class Traffic_Simulator():
         self.widget = mainWidget(self.env)
         self.env.setView(self.widget.ViewTab)
 
+        self.view = self.widget.ViewTab
+        self.train = self.widget.trainGroup
+
+    #def assignButtons(self):
+        
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ts = Traffic_Simulator()
