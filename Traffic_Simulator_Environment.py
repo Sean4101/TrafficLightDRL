@@ -89,14 +89,19 @@ class Car():
 class Traffic_Simulator_Env():
 
     def __init__(self):
+        ''' Initialize the environment. '''
         self.view = None
 
         self.isRendering = False
 
     def setView(self, viewTab):
+        ''' Set the GraphicView Widget from PyQt for rendering. '''
         self.view = viewTab
 
     def buildEnv(self):
+        ''' Build the structures of the environment.\n
+            Use addIntersection(), addRoad(), addPath() in this method
+            to create your traffic system. '''
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 100, 0)
         c = self.addIntersection("c", 100, 100)
@@ -119,6 +124,8 @@ class Traffic_Simulator_Env():
         car1 = self.addCar(path1, 40)
 
     def reset(self):
+        ''' Rebuild the environment and reset all cars.\n
+            Returns the initial state. '''
         self.intersections = {}
         self.roads = {}
         self.paths = {}
@@ -128,9 +135,12 @@ class Traffic_Simulator_Env():
         return state
 
     def render(self):
+        ''' Enable the rendering. '''
         self.isRendering = True
 
     def step(self, action):
+        ''' Make an action and update the environment.\n
+            returns the next state, reward, terminal and info. '''
         for index, car in enumerate(self.cars):
             car.step(render=self.isRendering)
             if car.done:

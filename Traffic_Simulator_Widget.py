@@ -1,3 +1,6 @@
+import sys
+import os
+
 import math
 import numpy as np
 
@@ -9,7 +12,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 
-from Traffic_Simulator_Environment import Traffic_Simulator_Env
 
 
 TITLE_TEXT = "Traffic Simulator"
@@ -22,17 +24,15 @@ INTERSECTION_DIAM = 15
 ROAD_WIDTH = 12
 
 class mainWidget(QWidget):
-    def __init__(self, env, parent=None):
+    def __init__(self, parent=None):
         super (mainWidget, self).__init__(parent)
 
         self.setGeometry(0, 0, 1500, 900)
         self.setWindowTitle(TITLE_TEXT)
-        self.env = env
-        self.ViewTab = ViewTab(self.env)
+        self.ViewTab = ViewTab()
         self.paramGroup = ParamGroup()
         self.trainGroup = TrainGroup()
         self.main_UI()
-        self.set_action()
     
     def main_UI(self):
         mainLayout = QGridLayout()
@@ -42,17 +42,9 @@ class mainWidget(QWidget):
         
         self.setLayout(mainLayout)
 
-    def set_action(self):
-        self.step()
-
-    def step(self):
-        self.trainGroup.stepButton.clicked.connect(self.ViewTab.moveCar)
-
 class ViewTab(QTabWidget):
-    def __init__(self, env, parent=None):
+    def __init__(self, parent=None):
         super(ViewTab, self).__init__(parent)
-
-        self.env = env
 
         self.setGeometry(0, 0, 900, 900)
         self.tab1 = QWidget()
@@ -92,9 +84,6 @@ class ViewTab(QTabWidget):
     def addCar(self, x, y):
         car = self.scene.addRect(x-CAR_HEIGHT/2, y-CAR_WIDTH/2, CAR_HEIGHT, CAR_WIDTH, self.blackPen, self.redBrush)
         return car
-
-    def moveCar(self):
-        self.env.step(1)
     
     def addInte(self, x, y):
         inte = self.scene.addEllipse(x-INTERSECTION_DIAM/2, y-INTERSECTION_DIAM/2, INTERSECTION_DIAM, INTERSECTION_DIAM, self.grayPen, self.grayBrush)
@@ -138,9 +127,13 @@ class TrainGroup(QGroupBox):
 
         self.setTitle("Train Options")
         self.stepButton = QPushButton("1 Step")
+        self.step10Button = QPushButton("10 Step")
+        self.autoStepButton = QPushButton("Auto Step")
 
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
+        layout.addWidget(self.step10Button, 1, 0, 1, 1)
+        layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
         self.setLayout(layout)
 
 class outputPlotSize(QWidget):
@@ -175,4 +168,11 @@ class spinBlock(QGroupBox):
 		layout = QHBoxLayout() 
 		layout.addWidget(self.spin)     
 		self.setLayout(layout)
+
+
+if  __name__ == "__main__":
+    app = QApplication(sys.argv)
+    widget = mainWidget()
+    widget.show()
+    os._exit(app.exec_())
 
