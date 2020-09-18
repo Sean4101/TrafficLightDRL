@@ -127,9 +127,13 @@ class TrainGroup(QGroupBox):
 
         self.setTitle("Train Options")
         self.stepButton = QPushButton("1 Step")
+        self.step10Button = QPushButton("10 Step")
+        self.autoStepButton = QPushButton("Auto Step")
 
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
+        layout.addWidget(self.step10Button, 1, 0, 1, 1)
+        layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
         self.setLayout(layout)
 
 class outputPlotSize(QWidget):
