@@ -121,7 +121,7 @@ class Traffic_Simulator_Env():
                 road = self.roads[key]
                 self.view.addRoad(road.start.x, road.start.y, road.end.x, road.end.y)
 
-        car1 = self.addCar(path1, 40)
+        car1 = self.addCar(path1, 60)
 
     def reset(self):
         ''' Rebuild the environment and reset all cars.\n

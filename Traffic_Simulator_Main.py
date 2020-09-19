@@ -7,8 +7,6 @@ from PyQt5.QtWidgets import QApplication
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from Test_RL_Model import test_model
-
-
 class Traffic_Simulator():
 
     def __init__(self):
@@ -21,11 +19,11 @@ class Traffic_Simulator():
 
         self.view = self.widget.ViewTab
         self.train = self.widget.trainGroup
-
+        self.param = self.widget.paramGroup
         self.autoStepping = False
 
         self.assignButtons()
-
+#        self.widget.mapSize()
     def assignButtons(self):
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
@@ -51,7 +49,14 @@ class Traffic_Simulator():
             self.envStep()
             QApplication.processEvents()
             time.sleep(0.1)
-        
+    def mapbig(self):
+        self.ALL_SIZE += 0.1
+    def mapsmall(self):
+        self.ALL_SIZE -= 0.1
+    
+#    def mapsize(self):
+   #     self.widget.mainWidget.mapsize()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

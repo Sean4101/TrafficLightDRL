@@ -13,15 +13,15 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 
 
-
+map_size = 5
 TITLE_TEXT = "Traffic Simulator"
 FONTSIZE = 12
 
-CAR_WIDTH = 2
-CAR_HEIGHT = 3
+CAR_WIDTH = 2*map_size
+CAR_HEIGHT = 3*map_size
 
-INTERSECTION_DIAM = 15
-ROAD_WIDTH = 12
+INTERSECTION_DIAM = 15*map_size
+ROAD_WIDTH = 12*map_size
 
 class mainWidget(QWidget):
     def __init__(self, parent=None):
@@ -129,13 +129,30 @@ class TrainGroup(QGroupBox):
         self.stepButton = QPushButton("1 Step")
         self.step10Button = QPushButton("10 Step")
         self.autoStepButton = QPushButton("Auto Step")
-
+        self.mapSmallButton = QPushButton("map b")
+        self.mapBigButton = QPushButton("map s")
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.step10Button, 1, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
-        self.setLayout(layout)
+        layout.addWidget(self.mapSmallButton, 3, 0, 1, 1)
+        layout.addWidget(self.mapBigButton, 3, 1, 1, 1)
 
+        self.setLayout(layout)
+    def mapSize(self):
+        self.mapsizeToBig()
+        self.mapsizeToSmall()
+
+    def mapsizeToBig(self):
+        self.mapSmallButton.clicked.connect(self.mapBigger)
+    def mapsizeToSmall(self):
+        self.mapBidButton.clicked.connect(self.mapSmaller)
+    def mapBigger(self):
+        map_size += 1
+        ViewTab.addCar()
+    def mapSmaller(self):
+        map_size -= 1
+        ViewTab.addInte()
 class outputPlotSize(QWidget):
 
 	def __init__(self, fontsize, parent=None):
