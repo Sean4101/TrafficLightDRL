@@ -14,13 +14,18 @@ class Intersection():
         self.x = xpos
         self.y = ypos
 
-        self.graphicObj = None
+        self.graphicsItem = None
 
-    def render(self, view):
+    def render(self, view, scale):
+
+        x = self.x * scale
+        y = self.y * scale
+        diam = INTERSECTION_DIAM * scale
+
         self.view = view
-        if self.graphicObj == None:
-            self.graphicObj = view.scene.addEllipse(self.x-INTERSECTION_DIAM/2, self.y-INTERSECTION_DIAM/2, 
-                                                    INTERSECTION_DIAM, INTERSECTION_DIAM, view.grayPen, view.grayBrush)
+        if self.graphicsItem == None:
+            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.grayPen, view.grayBrush)
+        self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
     def __init__(self, name : str, start : Intersection, end : Intersection, len: float, lim: float):
@@ -32,30 +37,33 @@ class Road():
 
         self.cars = []
         
-        self.graphicObj = None
+        self.graphicsItem = None
 
-    def render(self, view):
+    def render(self, view, scale):
         self.view = view
 
-        x1 = self.start.x
-        y1 = self.start.y
-        x2 = self.end.x
-        y2 = self.end.y
+        x1 = self.start.x * scale
+        y1 = self.start.y * scale
+        x2 = self.end.x * scale
+        y2 = self.end.y * scale
 
-        length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + ROAD_WIDTH
+        road_w = ROAD_WIDTH * scale
+
+        length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
         dx = x2 - x1
         dy = y2 - y1
         vec = complex(dx, dy)
         rot = np.angle(vec)
         rotd = np.angle(vec, deg=True)
 
-        x = x1 - math.sin(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
-        y = y1 + math.cos(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
+        x = x1 - math.sin(rot+math.pi*3/4)*road_w*math.sqrt(2)/2
+        y = y1 + math.cos(rot+math.pi*3/4)*road_w*math.sqrt(2)/2
 
-        if self.graphicObj == None:
-            self.graphicObj = view.scene.addRect(0, 0, length, ROAD_WIDTH, view.grayPen, view.grayBrush)
-        self.graphicObj.setRotation(rotd)
-        self.graphicObj.setPos(x, y)
+        if self.graphicsItem == None:
+            self.graphicsItem = view.scene.addRect(0, 0, 0, 0, view.grayPen, view.grayBrush)
+        self.graphicsItem.setRect(0, 0, length, road_w)
+        self.graphicsItem.setPos(x, y)
+        self.graphicsItem.setRotation(rotd)
 
 class Path():
     def __init__(self, name : str, roads : List[Road], current : float):

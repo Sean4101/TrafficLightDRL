@@ -16,6 +16,10 @@ from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as Navigatio
 TITLE_TEXT = "Traffic Simulator"
 FONTSIZE = 12
 
+
+CAR_WIDTH = 2
+CAR_HEIGHT = 3
+
 class mainWidget(QWidget):
     def __init__(self, parent=None):
         super (mainWidget, self).__init__(parent)
