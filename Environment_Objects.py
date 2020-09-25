@@ -1,11 +1,26 @@
 import numpy as np
+import math
 from typing import List
+
+CAR_WIDTH = 2
+CAR_HEIGHT = 3
+
+INTERSECTION_DIAM = 15
+ROAD_WIDTH = 12
 
 class Intersection():
     def __init__(self, name : str, xpos : int, ypos : int):
         self.name = name
         self.x = xpos
         self.y = ypos
+
+        self.graphicObj = None
+
+    def render(self, view):
+        self.view = view
+        if self.graphicObj == None:
+            self.graphicObj = view.scene.addEllipse(self.x-INTERSECTION_DIAM/2, self.y-INTERSECTION_DIAM/2, 
+                                                    INTERSECTION_DIAM, INTERSECTION_DIAM, view.grayPen, view.grayBrush)
 
 class Road():
     def __init__(self, name : str, start : Intersection, end : Intersection, len: float, lim: float):
@@ -16,6 +31,31 @@ class Road():
         self.lim = lim
 
         self.cars = []
+        
+        self.graphicObj = None
+
+    def render(self, view):
+        self.view = view
+
+        x1 = self.start.x
+        y1 = self.start.y
+        x2 = self.end.x
+        y2 = self.end.y
+
+        length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + ROAD_WIDTH
+        dx = x2 - x1
+        dy = y2 - y1
+        vec = complex(dx, dy)
+        rot = np.angle(vec)
+        rotd = np.angle(vec, deg=True)
+
+        x = x1 - math.sin(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
+        y = y1 + math.cos(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
+
+        if self.graphicObj == None:
+            self.graphicObj = view.scene.addRect(0, 0, length, ROAD_WIDTH, view.grayPen, view.grayBrush)
+        self.graphicObj.setRotation(rotd)
+        self.graphicObj.setPos(x, y)
 
 class Path():
     def __init__(self, name : str, roads : List[Road], current : float):
@@ -80,6 +120,9 @@ class Car():
         if self.info:
             print(str(self.xpos) + ", " + str(self.ypos))
             print(self.rot)
+        
+    def render(self, view):
+        self.view = view
     
     def leave(self):
         if self.render:

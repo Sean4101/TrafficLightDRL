@@ -23,9 +23,6 @@ class Traffic_Simulator():
         self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
                                             # also render the environment. 
 
-        # Initialize the env for rendering
-        self.env.setView(self.widget.ViewTab)
-
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.train = self.widget.trainGroup
@@ -43,7 +40,7 @@ class Traffic_Simulator():
 
     def reset(self):
         ''' Reset the environment. '''
-        self.env.render()
+        self.env.enableRender(self.view)
         self.envState = self.env.reset()
 
     def envStep(self):
