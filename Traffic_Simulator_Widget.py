@@ -1,7 +1,6 @@
 import sys
 import os
 
-import math
 import numpy as np
 
 from PyQt5.QtGui import *
@@ -17,11 +16,9 @@ map_size = 5
 TITLE_TEXT = "Traffic Simulator"
 FONTSIZE = 12
 
-CAR_WIDTH = 2*map_size
-CAR_HEIGHT = 3*map_size
 
-INTERSECTION_DIAM = 15*map_size
-ROAD_WIDTH = 12*map_size
+CAR_WIDTH = 2
+CAR_HEIGHT = 3
 
 class mainWidget(QWidget):
     def __init__(self, parent=None):
@@ -84,24 +81,6 @@ class ViewTab(QTabWidget):
     def addCar(self, x, y):
         car = self.scene.addRect(x-CAR_HEIGHT/2, y-CAR_WIDTH/2, CAR_HEIGHT, CAR_WIDTH, self.blackPen, self.redBrush)
         return car
-    
-    def addInte(self, x, y):
-        inte = self.scene.addEllipse(x-INTERSECTION_DIAM/2, y-INTERSECTION_DIAM/2, INTERSECTION_DIAM, INTERSECTION_DIAM, self.grayPen, self.grayBrush)
-
-    def addRoad(self, x1, y1, x2, y2):
-        length = math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + ROAD_WIDTH
-        dx = x2 - x1
-        dy = y2 - y1
-        vec = complex(dx, dy)
-        rot = np.angle(vec)
-        rotd = np.angle(vec, deg=True)
-
-        x = x1 - math.sin(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
-        y = y1 + math.cos(rot+math.pi*3/4)*ROAD_WIDTH*math.sqrt(2)/2
-
-        road = self.scene.addRect(0, 0, length, ROAD_WIDTH, self.grayPen, self.grayBrush)
-        road.setRotation(rotd)
-        road.setPos(x, y)
 
 class ParamGroup(QGroupBox):
     

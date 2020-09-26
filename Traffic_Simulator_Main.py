@@ -12,12 +12,14 @@ class Traffic_Simulator():
     def __init__(self):
 
         # Assign the objects
-        self.model = test_model(3, 3)
-        self.env = Traffic_Simulator_Env()
-        self.widget = mainWidget()
+        self.model = test_model(3, 3)       # A deep reinforcement model, which controls the signals
+                                            # in the environment also gets info from it.
 
-        # Initialize the env for rendering
-        self.env.setView(self.widget.ViewTab)
+        self.env = Traffic_Simulator_Env()  # A environment contains cars, roads, traffic signals and
+                                            # calculates how they behave.
+
+        self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
+                                            # also render the environment. 
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
@@ -36,7 +38,7 @@ class Traffic_Simulator():
 
     def reset(self):
         ''' Reset the environment. '''
-        self.env.render()
+        self.env.enableRender(self.view)
         self.envState = self.env.reset()
 
     def envStep(self):
@@ -69,7 +71,17 @@ class Traffic_Simulator():
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    # This will create a Traffic_Simulator object. It contains a widget
+    # object which creates a GUI window, and a environment object which
+    # creates and calculates what happen in the simulated traffic system.
     ts = Traffic_Simulator()
+
+    # Show window.
     ts.widget.show()
+
+    #Rreset the environment and configures whether to render or not.
     ts.reset()
+
+    # Exit app.
     os._exit(app.exec_())
