@@ -38,7 +38,7 @@ class Traffic_Simulator():
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
         self.train.autoStepButton.clicked.connect(self.autoStep)
-        #self.param.scalingSpin.changed.connect(self.)
+        self.param.scalingSpin.spin.valueChanged.connect(self.scale)
 
 
     def reset(self):
@@ -65,11 +65,9 @@ class Traffic_Simulator():
             self.envStep()
             QApplication.processEvents()
             time.sleep(0.1)
-    def mapbig(self):
-        self.ALL_SIZE += 0.1
-    def mapsmall(self):
-        self.ALL_SIZE -= 0.1
-    
+    def scale(self):
+        self.env.render(Value(scalingSpin))
+
 #    def mapsize(self):
    #     self.widget.mainWidget.mapsize()
 

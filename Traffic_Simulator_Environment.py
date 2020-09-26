@@ -27,7 +27,7 @@ class Traffic_Simulator_Env():
         path1 = self.addPath([ab, bc, cd], 60)
 
         if self.isRendering:
-            self.render()
+            self.render(1)
 
         car1 = self.addCar(path1, 60)
 
