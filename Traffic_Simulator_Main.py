@@ -68,8 +68,10 @@ class Traffic_Simulator():
             self.envStep()
             QApplication.processEvents()
             time.sleep(0.1)
+
     def scale(self):
         self.env.render(Value(scalingSpin))
+        
     def resetenv(self):
         self.view.scene.clear()
         self.env.reset()

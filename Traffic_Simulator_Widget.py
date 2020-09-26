@@ -91,7 +91,7 @@ class ParamGroup(QGroupBox):
         self.setGeometry(0, 0, 600, 900)
         self.setTitle("Parameters")
         self.actorlrSpin = spinBlock("Actor Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
-        self.criticlrSpin = spinBlock("Critic Learing Rate", 0, 1, double=True, step=0.001, Decimals=3)
+        self.criticlrSpin = spinBlock("Critic Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.gammaSpin = spinBlock("Gamma (Reward Discount)", 0, 1, double=True, step=0.001, Decimals=3)
         
         layout = QGridLayout()
