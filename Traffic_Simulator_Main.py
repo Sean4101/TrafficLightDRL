@@ -25,6 +25,7 @@ class Traffic_Simulator():
         self.view = self.widget.ViewTab
         self.train = self.widget.trainGroup
         self.param = self.widget.paramGroup
+        self.render = self.widget.renderGroup
 
         #env
         self.scale = self.env.render
@@ -38,8 +39,10 @@ class Traffic_Simulator():
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
         self.train.autoStepButton.clicked.connect(self.autoStep)
-        self.param.scalingSpin.spin.valueChanged.connect(self.scale)
+        
+        self.render.scalingSpin.spin.valueChanged.connect(self.scale)
 
+        self.render.resetButton.clicked.connect(self.resetenv)
 
     def reset(self):
         ''' Reset the environment. '''
@@ -67,10 +70,12 @@ class Traffic_Simulator():
             time.sleep(0.1)
     def scale(self):
         self.env.render(Value(scalingSpin))
-
-#    def mapsize(self):
-   #     self.widget.mainWidget.mapsize()
-
+    def resetenv(self):
+        self.view.scene.clear()
+        self.env.reset()
+        self.autoStepping = False
+        val = self.render.scalingSpin.spin.minimum()
+        self.render.scalingSpin.spin.setValue(val)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

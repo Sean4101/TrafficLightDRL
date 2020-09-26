@@ -29,14 +29,15 @@ class mainWidget(QWidget):
         self.ViewTab = ViewTab()
         self.paramGroup = ParamGroup()
         self.trainGroup = TrainGroup()
+        self.renderGroup = RenderGroup()
         self.main_UI()
     
     def main_UI(self):
         mainLayout = QGridLayout()
-        mainLayout.addWidget(self.ViewTab, 0, 0, 2, 1)
+        mainLayout.addWidget(self.ViewTab, 0, 0, 3, 1)
         mainLayout.addWidget(self.paramGroup, 0, 1, 1, 1)
         mainLayout.addWidget(self.trainGroup, 1, 1, 1, 1)
-        
+        mainLayout.addWidget(self.renderGroup, 2, 1, 1, 1)
         self.setLayout(mainLayout)
 
 class ViewTab(QTabWidget):
@@ -92,12 +93,12 @@ class ParamGroup(QGroupBox):
         self.actorlrSpin = spinBlock("Actor Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.criticlrSpin = spinBlock("Critic Learing Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.gammaSpin = spinBlock("Gamma (Reward Discount)", 0, 1, double=True, step=0.001, Decimals=3)
-        self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
+        
         layout = QGridLayout()
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
         layout.addWidget(self.gammaSpin,2,0,1,1)
-        layout.addWidget(self.scalingSpin,3,0,1,1)
+        
 
         self.setLayout(layout)
 
@@ -110,30 +111,30 @@ class TrainGroup(QGroupBox):
         self.stepButton = QPushButton("1 Step")
         self.step10Button = QPushButton("10 Step")
         self.autoStepButton = QPushButton("Auto Step")
-        self.mapSmallButton = QPushButton("map b")
-        self.mapBigButton = QPushButton("map s")
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.step10Button, 1, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
-        layout.addWidget(self.mapSmallButton, 3, 0, 1, 1)
-        layout.addWidget(self.mapBigButton, 3, 1, 1, 1)
 
         self.setLayout(layout)
-    def mapSize(self):
-        self.mapsizeToBig()
-        self.mapsizeToSmall()
+ 
+class RenderGroup(QGroupBox):
+    def __init__(self, parent=None):
+        super(RenderGroup, self).__init__(parent)
 
-    def mapsizeToBig(self):
-        self.mapSmallButton.clicked.connect(self.mapBigger)
-    def mapsizeToSmall(self):
-        self.mapBidButton.clicked.connect(self.mapSmaller)
-    def mapBigger(self):
-        map_size += 1
-        ViewTab.addCar()
-    def mapSmaller(self):
-        map_size -= 1
-        ViewTab.addInte()
+        self.setTitle("Render Options")
+        self.resetButton = QPushButton("Reset")
+
+        layout = QGridLayout()
+
+        layout.addWidget(self.resetButton ,0 ,0 ,1 ,1)
+        self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
+        layout.addWidget(self.scalingSpin,3,0,1,1)
+
+        self.setLayout(layout)
+        
+
+
 class outputPlotSize(QWidget):
 
 	def __init__(self, fontsize, parent=None):
