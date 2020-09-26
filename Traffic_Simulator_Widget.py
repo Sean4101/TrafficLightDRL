@@ -12,7 +12,7 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 
 
-
+map_size = 5
 TITLE_TEXT = "Traffic Simulator"
 FONTSIZE = 12
 
@@ -66,7 +66,7 @@ class ViewTab(QTabWidget):
         self.intersections = {}
         self.roads = {}
         self.paths = {}
-        self.cars = []
+        self.cars = [] 
 
     def Tab1_UI(self):
         layout = QVBoxLayout()
@@ -89,14 +89,16 @@ class ParamGroup(QGroupBox):
 
         self.setGeometry(0, 0, 600, 900)
         self.setTitle("Parameters")
-        self.actorlrSpin = spinBlock("Actor Learing Rate", 0, 1, double=True, step=0.001, Decimals=3)
+        self.actorlrSpin = spinBlock("Actor Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.criticlrSpin = spinBlock("Critic Learing Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.gammaSpin = spinBlock("Gamma (Reward Discount)", 0, 1, double=True, step=0.001, Decimals=3)
-
+        self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
         layout = QGridLayout()
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
         layout.addWidget(self.gammaSpin,2,0,1,1)
+        layout.addWidget(self.scalingSpin,3,0,1,1)
+
         self.setLayout(layout)
 
 class TrainGroup(QGroupBox):
@@ -108,13 +110,30 @@ class TrainGroup(QGroupBox):
         self.stepButton = QPushButton("1 Step")
         self.step10Button = QPushButton("10 Step")
         self.autoStepButton = QPushButton("Auto Step")
-
+        self.mapSmallButton = QPushButton("map b")
+        self.mapBigButton = QPushButton("map s")
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.step10Button, 1, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
-        self.setLayout(layout)
+        layout.addWidget(self.mapSmallButton, 3, 0, 1, 1)
+        layout.addWidget(self.mapBigButton, 3, 1, 1, 1)
 
+        self.setLayout(layout)
+    def mapSize(self):
+        self.mapsizeToBig()
+        self.mapsizeToSmall()
+
+    def mapsizeToBig(self):
+        self.mapSmallButton.clicked.connect(self.mapBigger)
+    def mapsizeToSmall(self):
+        self.mapBidButton.clicked.connect(self.mapSmaller)
+    def mapBigger(self):
+        map_size += 1
+        ViewTab.addCar()
+    def mapSmaller(self):
+        map_size -= 1
+        ViewTab.addInte()
 class outputPlotSize(QWidget):
 
 	def __init__(self, fontsize, parent=None):

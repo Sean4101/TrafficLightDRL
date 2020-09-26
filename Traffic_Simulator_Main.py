@@ -7,8 +7,6 @@ from PyQt5.QtWidgets import QApplication
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from Test_RL_Model import test_model
-
-
 class Traffic_Simulator():
 
     def __init__(self):
@@ -26,17 +24,22 @@ class Traffic_Simulator():
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.train = self.widget.trainGroup
+        self.param = self.widget.paramGroup
 
+        #env
+        self.scale = self.env.render
         # Settings
         self.autoStepping = False
 
-        self.assignButtons()
-
-    def assignButtons(self):
+        self.assignEvents()
+#        self.widget.mapSize()
+    def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
         self.train.autoStepButton.clicked.connect(self.autoStep)
+        self.param.scalingSpin.spin.valueChanged.connect(self.scale)
+
 
     def reset(self):
         ''' Reset the environment. '''
@@ -62,7 +65,12 @@ class Traffic_Simulator():
             self.envStep()
             QApplication.processEvents()
             time.sleep(0.1)
-        
+    def scale(self):
+        self.env.render(Value(scalingSpin))
+
+#    def mapsize(self):
+   #     self.widget.mainWidget.mapsize()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
