@@ -24,17 +24,22 @@ class Traffic_Simulator():
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.train = self.widget.trainGroup
+        self.param = self.widget.paramGroup
 
+        #env
+        self.scale = self.env.render
         # Settings
         self.autoStepping = False
 
-        self.assignButtons()
+        self.assignEvents()
 #        self.widget.mapSize()
-    def assignButtons(self):
+    def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
         self.train.autoStepButton.clicked.connect(self.autoStep)
+        #self.param.scalingSpin.changed.connect(self.)
+
 
     def reset(self):
         ''' Reset the environment. '''

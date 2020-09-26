@@ -48,13 +48,13 @@ class Traffic_Simulator_Env():
         self.view = view
         self.isRendering = True
 
-    def render(self):
+    def render(self,scale):
         for key in self.intersections:
             inte = self.intersections[key]
-            inte.render(self.view, 1.5)
+            inte.render(self.view, scale)
         for key in self.roads:
             road = self.roads[key]
-            road.render(self.view, 1.5)
+            road.render(self.view, scale)
 
     def step(self, action):
         ''' Make an action and update the environment.\n

@@ -63,7 +63,7 @@ class ViewTab(QTabWidget):
         self.Tab1_UI()
         self.Tab2_UI()
 
-       self.intersections = {}
+        self.intersections = {}
         self.roads = {}
         self.paths = {}
         self.cars = [] 
@@ -92,11 +92,13 @@ class ParamGroup(QGroupBox):
         self.actorlrSpin = spinBlock("Actor Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.criticlrSpin = spinBlock("Critic Learing Rate", 0, 1, double=True, step=0.001, Decimals=3)
         self.gammaSpin = spinBlock("Gamma (Reward Discount)", 0, 1, double=True, step=0.001, Decimals=3)
-
+        self.scalingSpin = spinBlock("scaling", 0, 1, double=True, step=0.001, Decimals=3)
         layout = QGridLayout()
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
         layout.addWidget(self.gammaSpin,2,0,1,1)
+        layout.addWidget(self.scalingSpin,3,0,1,1)
+
         self.setLayout(layout)
 
 class TrainGroup(QGroupBox):
