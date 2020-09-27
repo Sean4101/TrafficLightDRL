@@ -79,10 +79,6 @@ class ViewTab(QTabWidget):
         layout.addWidget(self.plot)
         self.tab2.setLayout(layout)
 
-    def addCar(self, x, y):
-        car = self.scene.addRect(x-CAR_HEIGHT/2, y-CAR_WIDTH/2, CAR_HEIGHT, CAR_WIDTH, self.blackPen, self.redBrush)
-        return car
-
 class ParamGroup(QGroupBox):
     
     def __init__(self, parent=None):

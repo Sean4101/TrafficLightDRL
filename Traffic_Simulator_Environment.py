@@ -25,11 +25,12 @@ class Traffic_Simulator_Env():
         cd = self.addRoad(c, d, 400, 60)
 
         path1 = self.addPath([ab, bc, cd], 60)
+        
+        car1 = self.addCar(path1, 60)
 
         if self.isRendering:
             self.render(1)
 
-        car1 = self.addCar(path1, 60)
 
     def reset(self):
         ''' Rebuild the environment and reset all cars.\n
@@ -55,14 +56,15 @@ class Traffic_Simulator_Env():
         for key in self.roads:
             road = self.roads[key]
             road.render(self.view, scale)
+        for car in self.cars:
+            car.render(self.view, scale)
 
     def step(self, action):
         ''' Make an action and update the environment.\n
             returns the next state, reward, terminal and info. '''
         for index, car in enumerate(self.cars):
-            car.step(render=self.isRendering)
+            car.step()
             if car.done:
-                #self.view.scene.removeItem(car.car_rect)
                 self.cars.pop(index)
         state_ = None
         reward = None
@@ -91,6 +93,6 @@ class Traffic_Simulator_Env():
         return add
 
     def addCar(self, path : Path, maxSpd=20.0):
-        add = Car(path, maxSpd=maxSpd, view=self.view, render=True)
+        add = Car(path, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add

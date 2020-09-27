@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from Test_RL_Model import test_model
+
 class Traffic_Simulator():
 
     def __init__(self):
@@ -33,7 +34,7 @@ class Traffic_Simulator():
         self.autoStepping = False
 
         self.assignEvents()
-#        self.widget.mapSize()
+        
     def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
         self.train.stepButton.clicked.connect(self.envStep)
@@ -53,6 +54,7 @@ class Traffic_Simulator():
         ''' Do one predict and update once. '''
         action = self.model.predict(self.envState)
         state_, reward, terminal, _ = self.env.step(action)
+        self.env.render(self.render.scalingSpin.spin.value())
 
     def step10(self):
         ''' Update ten times. '''
@@ -70,7 +72,7 @@ class Traffic_Simulator():
             time.sleep(0.1)
 
     def scale(self):
-        self.env.render(Value(scalingSpin))
+        self.env.render(self.render.scalingSpin.spin.value())
         
     def resetenv(self):
         self.view.scene.clear()

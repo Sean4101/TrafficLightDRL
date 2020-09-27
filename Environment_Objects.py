@@ -71,15 +71,14 @@ class Path():
         self.current = current
 
 class Car():
-    def __init__(self, path : Path, maxSpd= 20.0, info=False, render = False, view = None):
+    def __init__(self, path : Path, maxSpd= 20.0, info=False, view = None):
         self.path = path
         self.road = path.roads[0]
         self.maxSpd = maxSpd
         self.info = info
-        self.render = render
         self.view = view
     
-        self.car_rect = None
+        self.graphicsItem = None
 
         self.tot_stages = len(self.path.roads)
         self.stage = 0
@@ -93,13 +92,8 @@ class Car():
         dy = -self.road.end.y - self.road.start.y
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
-
-        if self.render:
-            self.car_rect = self.view.addCar(self.xpos, self.ypos)
-            self.car_rect.setRotation(self.rot)
     
-    def step(self, render=False):
-        self.render = render
+    def step(self):
 
         self.road = self.path.roads[self.stage]
         self.progress += self.maxSpd
@@ -118,20 +112,24 @@ class Car():
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
         
-        if self.render:
-            if self.car_rect == None:
-                self.car_rect = self.view.addCar(self.xpos, self.ypos)
-            else:
-                self.car_rect.setPos(self.xpos, self.ypos)
-                self.car_rect.setRotation(self.rot)
-        
         if self.info:
             print(str(self.xpos) + ", " + str(self.ypos))
             print(self.rot)
         
-    def render(self, view):
+    def render(self, view, scale):
         self.view = view
+
+        x = self.xpos * scale
+        y = self.ypos * scale
+        h = CAR_HEIGHT * scale
+        w = CAR_WIDTH * scale
+
+        if self.graphicsItem == None:
+            self.graphicsItem = self.view.scene.addRect(x-h/2, y-w/2, h, w, view.blackPen, view.redBrush)
+        self.graphicsItem.setRect(0, 0, h, w)
+        self.graphicsItem.setPos(x, y)
+        self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
         if self.render:
-            self.view.scene.removeItem(self.car_rect)
+            self.view.scene.removeItem(self.graphicsItem)
