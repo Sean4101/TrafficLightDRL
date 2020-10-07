@@ -16,17 +16,15 @@ class Traffic_Simulator_Env():
             Use addIntersection(), addRoad(), addPath() in this method
             to create your traffic system. '''
         a = self.addIntersection("a", 0, 0)
-        b = self.addIntersection("b", 100, 0)
-        c = self.addIntersection("c", 100, 100)
-        d = self.addIntersection("d", 200, 100)
+        b = self.addIntersection("b", 200, 0)
+        c = self.addIntersection("c", 400, 0)
 
-        ab = self.addRoad(a, b, 400, 60)
-        bc = self.addRoad(b, c, 400, 60)
-        cd = self.addRoad(c, d, 400, 60)
+        ab = self.addRoad(a, b, 200, 60)
+        bc = self.addRoad(b, c, 200, 60)
 
-        path1 = self.addPath([ab, bc, cd], 60)
+        self.path1 = self.addPath([ab, bc], 1)
         
-        car1 = self.addCar(path1, 60)
+        car1 = self.addCar(self.path1)
 
         if self.isRendering:
             self.render(1)
@@ -49,7 +47,7 @@ class Traffic_Simulator_Env():
         self.view = view
         self.isRendering = True
 
-    def render(self,scale):
+    def render(self, scale):
         for key in self.intersections:
             inte = self.intersections[key]
             inte.render(self.view, scale)
@@ -62,6 +60,7 @@ class Traffic_Simulator_Env():
     def step(self, action):
         ''' Make an action and update the environment.\n
             returns the next state, reward, terminal and info. '''
+        self.addCar(self.path1, maxSpd=3)
         for index, car in enumerate(self.cars):
             car.step()
             if car.done:

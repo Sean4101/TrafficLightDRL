@@ -8,6 +8,8 @@ CAR_HEIGHT = 3
 INTERSECTION_DIAM = 15
 ROAD_WIDTH = 12
 
+SAFE_DIST = 10
+
 class Intersection():
     def __init__(self, name : str, xpos : int, ypos : int):
         self.name = name
@@ -28,12 +30,12 @@ class Intersection():
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
-    def __init__(self, name : str, start : Intersection, end : Intersection, len: float, lim: float):
+    def __init__(self, name : str, start : Intersection, end : Intersection, len: float, spdLim: float):
         self.name = name
         self.start = start
         self.end = end
         self.len = len
-        self.lim = lim
+        self.spdLim = spdLim*1000/3600
 
         self.cars = []
         
@@ -71,20 +73,23 @@ class Path():
         self.current = current
 
 class Car():
-    def __init__(self, path : Path, maxSpd= 20.0, info=False, view = None):
+    def __init__(self, path : Path, maxSpd= 20.0, view = None):
         self.path = path
         self.road = path.roads[0]
         self.maxSpd = maxSpd
-        self.info = info
         self.view = view
     
         self.graphicsItem = None
 
         self.tot_stages = len(self.path.roads)
         self.stage = 0
+        self.prev_progress = 0.0
         self.progress = 0.0
+        self.prev_speed = 0.0
+        self.speed = 0.0
         self.done = False
 
+        self.road.cars.append(self)
         self.xpos = self.road.start.x
         self.ypos = self.road.start.y
 
@@ -95,26 +100,27 @@ class Car():
     
     def step(self):
 
-        self.road = self.path.roads[self.stage]
-        self.progress += self.maxSpd
+        self.relative_safe_dist_drive()
+
+        self.prev_speed = self.speed
+        self.prev_progress = self.progress
         if self.progress >= self.road.len:
             self.stage += 1
+            self.road.cars.remove(self)
             if self.stage >= self.tot_stages:
-                self.done = True
                 self.leave()
                 return
             self.road = self.path.roads[self.stage]
+            self.road.cars.append(self)
             self.progress = 0
+        
         self.xpos = self.road.start.x * (1 - self.progress/self.road.len) + self.road.end.x * self.progress/self.road.len
         self.ypos = self.road.start.y * (1 - self.progress/self.road.len) + self.road.end.y * self.progress/self.road.len
+
         dx = self.road.end.x - self.road.start.x
         dy = -self.road.end.y + self.road.start.y
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
-        
-        if self.info:
-            print(str(self.xpos) + ", " + str(self.ypos))
-            print(self.rot)
         
     def render(self, view, scale):
         self.view = view
@@ -131,5 +137,22 @@ class Car():
         self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
-        if self.render:
+        if self.view != None:
+            self.done = True
             self.view.scene.removeItem(self.graphicsItem)
+
+    def relative_safe_dist_drive(self):
+        idx = self.road.cars.index(self)
+        if idx == 0:
+            self.speed = self.maxSpd
+        else:
+            front_car = self.road.cars[idx - 1]
+            front_spd = front_car.prev_speed
+            front_dx = front_car.prev_progress - self.progress
+            spd = front_dx + front_spd - SAFE_DIST
+            if spd > self.maxSpd:
+                spd = self.maxSpd
+            elif spd < 0:
+                spd = 0
+            self.speed = spd
+        self.progress += self.speed
