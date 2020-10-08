@@ -3,6 +3,10 @@ from typing import List
 
 from Environment_Objects import Intersection, Road, Path, Car
 
+UPDATE_DUR = 0.1
+RENDER_DUR = 1
+RL_UPDATE_DUR = 2
+
 class Traffic_Simulator_Env():
 
     def __init__(self):
@@ -62,7 +66,7 @@ class Traffic_Simulator_Env():
             returns the next state, reward, terminal and info. '''
         self.addCar(self.path1, maxSpd=3)
         for index, car in enumerate(self.cars):
-            car.step()
+            car.step(UPDATE_DUR)
             if car.done:
                 self.cars.pop(index)
         state_ = None

@@ -98,8 +98,9 @@ class Car():
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
     
-    def step(self):
+    def step(self, update_dur):
 
+        self.update_dur = update_dur
         self.relative_safe_dist_drive()
 
         self.prev_speed = self.speed
@@ -144,7 +145,7 @@ class Car():
     def relative_safe_dist_drive(self):
         idx = self.road.cars.index(self)
         if idx == 0:
-            self.speed = self.maxSpd
+            self.speed = self.maxSpd * self.update_dur
         else:
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
