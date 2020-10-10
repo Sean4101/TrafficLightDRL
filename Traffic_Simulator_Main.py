@@ -29,7 +29,7 @@ class Traffic_Simulator():
         self.render = self.widget.renderGroup
 
         #env
-        self.scale = self.env.render
+        self.scale = self.env.renderScale
         # Settings
         self.autoStepping = False
 
@@ -61,7 +61,7 @@ class Traffic_Simulator():
         for i in range(10):
             self.envStep()
             QApplication.processEvents()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     def autoStep(self):
         ''' Toggle auto update. '''
@@ -69,7 +69,7 @@ class Traffic_Simulator():
         while self.autoStepping:
             self.envStep()
             QApplication.processEvents()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     def scale(self):
         self.env.render(self.render.scalingSpin.spin.value())

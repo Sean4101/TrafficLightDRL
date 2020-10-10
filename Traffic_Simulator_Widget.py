@@ -52,6 +52,8 @@ class ViewTab(QTabWidget):
         self.envView = QGraphicsView(self.scene, self.tab1)
         self.envView.setGeometry(0, 0, 600, 600)
         self.redBrush = QBrush(Qt.red)
+        self.yellowBrush = QBrush(Qt.yellow)
+        self.greenBrush = QBrush(Qt.green)
         self.blueBrush = QBrush(Qt.blue)
         self.grayBrush = QBrush(Qt.gray)
         self.blackPen = QPen(Qt.black)

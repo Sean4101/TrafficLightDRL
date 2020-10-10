@@ -22,16 +22,19 @@ class Traffic_Simulator_Env():
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 200, 0)
         c = self.addIntersection("c", 400, 0)
+        d = self.addIntersection("d", 200, -200)
+        e = self.addIntersection("e", 200, 200)
 
-        ab = self.addRoad(a, b, 200, 60)
-        bc = self.addRoad(b, c, 200, 60)
+        ab = self.addRoad(a, b, 60)
+        bc = self.addRoad(b, c, 60)
+        db = self.addRoad(d, b, 60)
+        be = self.addRoad(b, e, 60)
 
         self.path1 = self.addPath([ab, bc], 1)
-        
-        car1 = self.addCar(self.path1)
+        self.path2 = self.addPath([db, be], 1)
 
         if self.isRendering:
-            self.render(1)
+            self.renderScale(1)
 
 
     def reset(self):
@@ -51,7 +54,7 @@ class Traffic_Simulator_Env():
         self.view = view
         self.isRendering = True
 
-    def render(self, scale):
+    def renderScale(self, scale):
         for key in self.intersections:
             inte = self.intersections[key]
             inte.render(self.view, scale)
@@ -61,12 +64,21 @@ class Traffic_Simulator_Env():
         for car in self.cars:
             car.render(self.view, scale)
 
+    def render(self, scale):
+        for car in self.cars:
+            car.render(self.view, scale)
+
     def step(self, action):
         ''' Make an action and update the environment.\n
             returns the next state, reward, terminal and info. '''
-        self.addCar(self.path1, maxSpd=3)
+        rand1 = np.random.rand()
+        rand2 = np.random.rand()
+        if rand1 > 0.95:
+            self.addCar(self.path1, maxSpd=20)
+        if rand2 > 0.99:
+            self.addCar(self.path2, maxSpd=20)
         for index, car in enumerate(self.cars):
-            car.step(UPDATE_DUR)
+            car.update()
             if car.done:
                 self.cars.pop(index)
         state_ = None
@@ -76,15 +88,15 @@ class Traffic_Simulator_Env():
         return state_, reward, term, info 
         
 
-    def addIntersection(self, name : str, x : int, y : int):
-        add = Intersection(name, x, y)
+    def addIntersection(self, name : str, x : int, y : int, diam =20):
+        add = Intersection(name, x, -y, diam)
         self.intersections[add.name] = add
         return add
 
-    def addRoad(self, start : Intersection, end : Intersection, len : float, spdLim : float):
+    def addRoad(self, start : Intersection, end : Intersection, spdLim : float):
         name = start.name+"-"+end.name
         lim = spdLim/3600*1000
-        add = Road(name, start, end, len, lim)
+        add = Road(name, start, end, lim)
         self.roads[add.name] = add
         return add
 
@@ -96,6 +108,6 @@ class Traffic_Simulator_Env():
         return add
 
     def addCar(self, path : Path, maxSpd=20.0):
-        add = Car(path, maxSpd=maxSpd, view=self.view)
+        add = Car(path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
