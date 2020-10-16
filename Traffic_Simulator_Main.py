@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from Test_RL_Model import test_model
+from Environment_Objects import Signals
 
 class Traffic_Simulator():
 
@@ -40,6 +41,8 @@ class Traffic_Simulator():
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.step10Button.clicked.connect(self.step10)
         self.train.autoStepButton.clicked.connect(self.autoStep)
+        self.train.trafficLightButton.clicked.connect(self.trafficlight)
+
         
         self.render.scalingSpin.spin.valueChanged.connect(self.scale)
 
@@ -73,7 +76,12 @@ class Traffic_Simulator():
 
     def trafficlight(self):
         #test
-        return 
+        if self.env.sig1.signal == Signals.RED:
+            self.env.sig1.signal = Signals.GREEN
+        elif self.env.sig1.signal == Signals.GREEN:
+            self.env.sig1.signal = Signals.RED
+
+        
 
     def scale(self):
         self.env.render(self.render.scalingSpin.spin.value())

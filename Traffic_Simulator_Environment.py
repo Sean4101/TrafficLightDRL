@@ -25,9 +25,9 @@ class Traffic_Simulator_Env():
         d = self.addIntersection("d", 200, -200)
         e = self.addIntersection("e", 200, 200)
 
-        sig1 = self.addTrafficSignal(Signals.RED)
+        self.sig1 = self.addTrafficSignal(Signals.RED)
 
-        ab = self.addRoad(a, b, 60, sig1)
+        ab = self.addRoad(a, b, 60, self.sig1)
         bc = self.addRoad(b, c, 60)
         db = self.addRoad(d, b, 60)
         be = self.addRoad(b, e, 60)

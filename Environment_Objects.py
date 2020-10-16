@@ -217,6 +217,7 @@ class Traffic_signal():
     def __init__(self, def_signal):
         self.signal = def_signal
 
+
 class Signals(enum.IntEnum):
     GREEN = 0
     YELLOW = 1
