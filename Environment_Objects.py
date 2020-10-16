@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import enum
 from typing import List
 
 CAR_WIDTH = 2
@@ -9,7 +10,7 @@ INTERSECTION_DIAM = 20
 ROAD_WIDTH = 12
 
 TRANSIT_TIME = 2
-SAFE_DIST = 10
+SAFE_DIST = 7
 
 class Intersection():
     def __init__(self, name : str, xpos : float, ypos : float, diam : float):
@@ -34,11 +35,12 @@ class Intersection():
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
-    def __init__(self, name : str, from_ : Intersection, to : Intersection, spdLim: float):
+    def __init__(self, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
         self.name = name
         self.from_ = from_
         self.to = to
         self.spdLim = spdLim*1000/3600
+        self.traffic_signal = traffic_signal
 
         self.calculate_cords()
 
@@ -178,7 +180,15 @@ class Car():
     def relative_safe_dist_drive(self):
         idx = self.road.cars.index(self)
         if idx == 0:
-            self.speed = self.maxSpd
+            if self.road.traffic_signal != None:
+                if self.road.traffic_signal.signal == Signals.GREEN:
+                    self.speed = self.maxSpd
+                elif self.road.traffic_signal.signal == Signals.RED:
+                    if self.road.len - self.prev_progress < 20: # m
+                        self.speed = 0
+                    else:
+                        self.speed = self.maxSpd
+
         else:
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
@@ -202,3 +212,12 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
+
+class Traffic_signal():
+    def __init__(self, def_signal):
+        self.signal = def_signal
+
+class Signals(enum.IntEnum):
+    GREEN = 0
+    YELLOW = 1
+    RED = 2
