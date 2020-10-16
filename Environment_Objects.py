@@ -151,8 +151,8 @@ class Car():
         self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
+        self.done = True
         if self.view != None:
-            self.done = True
             self.view.scene.removeItem(self.graphicsItem)
 
     def transit(self):
@@ -182,8 +182,8 @@ class Car():
         else:
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
-            front_dx = front_car.prev_progress - self.progress
-            spd = front_dx + front_spd * self.update_dur - SAFE_DIST
+            front_dist = front_car.prev_progress - self.progress
+            spd = front_dist + front_spd * self.update_dur - SAFE_DIST
             if spd > self.maxSpd:
                 spd = self.maxSpd
             elif spd < 0:
