@@ -71,6 +71,10 @@ class Traffic_Simulator():
             QApplication.processEvents()
             time.sleep(0.01)
 
+    def trafficlight(self):
+        #test
+        return 
+
     def scale(self):
         self.env.render(self.render.scalingSpin.spin.value())
         

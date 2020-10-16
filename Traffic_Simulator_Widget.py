@@ -109,10 +109,12 @@ class TrainGroup(QGroupBox):
         self.stepButton = QPushButton("1 Step")
         self.step10Button = QPushButton("10 Step")
         self.autoStepButton = QPushButton("Auto Step")
+        self.trafficLight = QPushButton("traffic light")
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.step10Button, 1, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
+        #layout.addWidget(self.trafficLight, 3, 0, 1, 1)
 
         self.setLayout(layout)
  

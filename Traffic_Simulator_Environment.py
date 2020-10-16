@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List
 
-from Environment_Objects import Intersection, Road, Path, Car
+from Environment_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
 
 UPDATE_DUR = 0.1
 RENDER_DUR = 1
@@ -25,7 +25,9 @@ class Traffic_Simulator_Env():
         d = self.addIntersection("d", 200, -200)
         e = self.addIntersection("e", 200, 200)
 
-        ab = self.addRoad(a, b, 60)
+        sig1 = self.addTrafficSignal(Signals.RED)
+
+        ab = self.addRoad(a, b, 60, sig1)
         bc = self.addRoad(b, c, 60)
         db = self.addRoad(d, b, 60)
         be = self.addRoad(b, e, 60)
@@ -93,10 +95,10 @@ class Traffic_Simulator_Env():
         self.intersections[add.name] = add
         return add
 
-    def addRoad(self, start : Intersection, end : Intersection, spdLim : float):
+    def addRoad(self, start : Intersection, end : Intersection, spdLim : float, traffic_signal=None):
         name = start.name+"-"+end.name
         lim = spdLim/3600*1000
-        add = Road(name, start, end, lim)
+        add = Road(name, start, end, lim, traffic_signal=traffic_signal)
         self.roads[add.name] = add
         return add
 
@@ -107,7 +109,14 @@ class Traffic_Simulator_Env():
         add = Path(name, roads, current)
         return add
 
+    def addTrafficSignal(self, def_signal):
+        add = Traffic_signal(def_signal)
+        return add
+
     def addCar(self, path : Path, maxSpd=20.0):
         add = Car(path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
+
+    
+
