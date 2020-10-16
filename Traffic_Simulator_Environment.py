@@ -15,17 +15,31 @@ class Traffic_Simulator_Env():
 
         self.isRendering = False
 
+    def reset(self):
+        ''' Rebuild the environment and reset all cars.\n
+            Returns the initial state. '''
+        self.intersections = {}
+        self.roads = {}
+        self.paths = {}
+        self.signals = []
+        self.cars = []
+        self.buildEnv()
+        state = None
+        return state
+
     def buildEnv(self):
         ''' Build the structures of the environment.\n
-            Use addIntersection(), addRoad(), addPath() in this method
-            to create your traffic system. '''
+            Use addTrafficSignal(), addIntersection(), 
+            addRoad(), addPath() in this method to 
+            create your traffic system. '''
+
+        self.sig1 = self.addTrafficSignal(Signals.RED)
+
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 200, 0)
         c = self.addIntersection("c", 400, 0)
         d = self.addIntersection("d", 200, -200)
         e = self.addIntersection("e", 200, 200)
-
-        self.sig1 = self.addTrafficSignal(Signals.RED)
 
         ab = self.addRoad(a, b, 60, self.sig1)
         bc = self.addRoad(b, c, 60)
@@ -37,18 +51,6 @@ class Traffic_Simulator_Env():
 
         if self.isRendering:
             self.renderScale(1)
-
-
-    def reset(self):
-        ''' Rebuild the environment and reset all cars.\n
-            Returns the initial state. '''
-        self.intersections = {}
-        self.roads = {}
-        self.paths = {}
-        self.cars = []
-        self.buildEnv()
-        state = None
-        return state
 
     def enableRender(self, view):
         ''' Enable the rendering. \n
@@ -63,21 +65,25 @@ class Traffic_Simulator_Env():
         for key in self.roads:
             road = self.roads[key]
             road.render(self.view, scale)
-        for car in self.cars:
-            car.render(self.view, scale)
+        self.renderUpdate(scale)
 
-    def render(self, scale):
+    def renderUpdate(self, scale):
         for car in self.cars:
             car.render(self.view, scale)
+        self.tsRender(scale)
+
+    def tsRender(self, scale):
+        for ts in self.signals:
+            ts.render(self.view, scale)
 
     def step(self, action):
         ''' Make an action and update the environment.\n
             returns the next state, reward, terminal and info. '''
         rand1 = np.random.rand()
         rand2 = np.random.rand()
-        if rand1 > 0.95:
+        if rand1 < 0.02:
             self.addCar(self.path1, maxSpd=20)
-        if rand2 > 0.99:
+        if rand2 < 0.01:
             self.addCar(self.path2, maxSpd=20)
         for index, car in enumerate(self.cars):
             car.update()
@@ -111,6 +117,7 @@ class Traffic_Simulator_Env():
 
     def addTrafficSignal(self, def_signal):
         add = Traffic_signal(def_signal)
+        self.signals.append(add)
         return add
 
     def addCar(self, path : Path, maxSpd=20.0):

@@ -6,6 +6,9 @@ from typing import List
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
 
+TRAFFIC_SIGNAL_DIAM = 5
+TRAFFIC_SIGNAL_DIST = 20
+TRAFFIC_SIGNAL_AWAY = 20
 INTERSECTION_DIAM = 20
 ROAD_WIDTH = 12
 
@@ -40,7 +43,11 @@ class Road():
         self.from_ = from_
         self.to = to
         self.spdLim = spdLim*1000/3600
-        self.traffic_signal = traffic_signal
+        if traffic_signal != None:
+            self.traffic_signal = traffic_signal
+            self.traffic_signal.road = self
+        else:
+            self.traffic_signal = None
 
         self.calculate_cords()
 
@@ -58,20 +65,15 @@ class Road():
         road_w = ROAD_WIDTH * scale
 
         length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
-        dx = x2 - x1
-        dy = y2 - y1
-        vec = complex(dx, dy)
-        rot = np.angle(vec)
-        rotd = np.angle(vec, deg=True)
 
-        x = x1 - math.sin(rot+math.pi*3/4)*road_w*math.sqrt(2)/2
-        y = y1 + math.cos(rot+math.pi*3/4)*road_w*math.sqrt(2)/2
+        x = x1 - math.sin(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
+        y = y1 + math.cos(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
 
         if self.graphicsItem == None:
             self.graphicsItem = view.scene.addRect(0, 0, 0, 0, view.grayPen, view.grayBrush)
         self.graphicsItem.setRect(0, 0, length, road_w)
         self.graphicsItem.setPos(x, y)
-        self.graphicsItem.setRotation(rotd)
+        self.graphicsItem.setRotation(self.rotd)
     
     def calculate_cords(self):
         fx, fy = self.from_.x, self.from_.y
@@ -84,6 +86,9 @@ class Road():
         self.endy = ty - dy*(self.from_.diam/2/raw_len)
         dx, dy = self.endx-self.startx, self.endy-self.starty
         self.len = np.sqrt(dx**2 + dy**2)
+        vec = complex(dx, dy)
+        self.rot = np.angle(vec)
+        self.rotd = np.angle(vec, deg=True)
 
 
 
@@ -184,11 +189,12 @@ class Car():
                 if self.road.traffic_signal.signal == Signals.GREEN:
                     self.speed = self.maxSpd
                 elif self.road.traffic_signal.signal == Signals.RED:
-                    if self.road.len - self.prev_progress < 20: # m
+                    if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m
                         self.speed = 0
                     else:
                         self.speed = self.maxSpd
-
+            else:
+                self.speed = self.maxSpd
         else:
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
@@ -204,10 +210,7 @@ class Car():
         self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len
         self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len
 
-        dx = self.road.endx - self.road.startx
-        dy = -self.road.endy + self.road.starty
-        vec = complex(dx, dy)
-        self.rot = np.angle(vec, deg=True)
+        self.rot = self.road.rotd
     
     def record(self):
         self.prev_speed = self.speed
@@ -216,7 +219,34 @@ class Car():
 class Traffic_signal():
     def __init__(self, def_signal):
         self.signal = def_signal
+        self.road : Road = None
 
+        self.graphicsItem = None
+
+    def render(self, view, scale):
+        self.view = view
+        diam = TRAFFIC_SIGNAL_DIAM * scale
+        x1 = self.road.to.x
+        x2 = self.road.from_.x
+        y1 = self.road.to.y
+        y2 = self.road.from_.y
+        rot = self.road.rot
+
+        mx = x1 + math.cos(rot+math.pi)*TRAFFIC_SIGNAL_DIST
+        my = y1 + math.sin(rot+math.pi)*TRAFFIC_SIGNAL_DIST
+
+        x = mx + math.cos(rot+math.pi*3/2)*TRAFFIC_SIGNAL_DIST
+        y = my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_DIST
+
+        if self.graphicsItem == None:
+            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.blackPen, view.greenBrush)
+        if self.signal == Signals.GREEN:
+            self.graphicsItem.setBrush(view.greenBrush)
+        if self.signal == Signals.YELLOW:
+            self.graphicsItem.setBrush(view.yellowBrush)
+        if self.signal == Signals.RED:
+            self.graphicsItem.setBrush(view.redBrush)
+        self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Signals(enum.IntEnum):
     GREEN = 0

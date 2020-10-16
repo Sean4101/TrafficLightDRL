@@ -57,7 +57,7 @@ class Traffic_Simulator():
         ''' Do one predict and update once. '''
         action = self.model.predict(self.envState)
         state_, reward, terminal, _ = self.env.step(action)
-        self.env.render(self.render.scalingSpin.spin.value())
+        self.env.renderUpdate(self.render.scalingSpin.spin.value())
 
     def step10(self):
         ''' Update ten times. '''
@@ -80,8 +80,8 @@ class Traffic_Simulator():
             self.env.sig1.signal = Signals.GREEN
         elif self.env.sig1.signal == Signals.GREEN:
             self.env.sig1.signal = Signals.RED
+        self.env.tsRender(self.render.scalingSpin.spin.value())
 
-        
 
     def scale(self):
         self.env.render(self.render.scalingSpin.spin.value())
