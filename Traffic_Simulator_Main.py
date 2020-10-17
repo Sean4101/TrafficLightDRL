@@ -45,7 +45,6 @@ class Traffic_Simulator():
         ''' Assign every buttons in widget to a method '''
         self.train.stepButton.clicked.connect(self.envStep)
         self.train.autoStepButton.clicked.connect(self.autoStep)
-        self.train.trafficLightButton.clicked.connect(self.trafficlight)
         
         self.render.scalingSpin.spin.valueChanged.connect(self.scale)
         self.render.resetButton.clicked.connect(self.resetenv)
@@ -69,15 +68,6 @@ class Traffic_Simulator():
             self.envStep()
             QApplication.processEvents()
             time.sleep(0.01)
-
-    def trafficlight(self):
-        #test
-        if self.env.sig1.signal == Signals.RED:
-            self.env.sig1.signal = Signals.GREEN
-        elif self.env.sig1.signal == Signals.GREEN:
-            self.env.sig1.signal = Signals.RED
-        self.env.tsRender(self.render.scalingSpin.spin.value())
-
 
     def scale(self):
         self.env.render(self.render.scalingSpin.spin.value())

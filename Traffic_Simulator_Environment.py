@@ -34,6 +34,7 @@ class Traffic_Simulator_Env():
             create your traffic system. '''
 
         self.sig1 = self.addTrafficSignal(Signals.RED)
+        self.sig2 = self.addTrafficSignal(Signals.RED, self.sig1)
 
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 200, 0)
@@ -43,7 +44,7 @@ class Traffic_Simulator_Env():
 
         ab = self.addRoad(a, b, 60, self.sig1)
         bc = self.addRoad(b, c, 60)
-        db = self.addRoad(d, b, 60)
+        db = self.addRoad(d, b, 60, self.sig2)
         be = self.addRoad(b, e, 60)
 
         self.path1 = self.addPath([ab, bc], 1)
@@ -88,6 +89,8 @@ class Traffic_Simulator_Env():
             car.update()
             if car.done:
                 self.cars.pop(index)
+        for sig in self.signals:
+            sig.update()
 
     def makeAction(self, action):
         ''' Make an action, change the duration of the traffic signals. '''
@@ -121,8 +124,8 @@ class Traffic_Simulator_Env():
         add = Path(name, roads, current)
         return add
 
-    def addTrafficSignal(self, def_signal):
-        add = Traffic_signal(def_signal)
+    def addTrafficSignal(self, def_signal, master=None):
+        add = Traffic_signal(def_signal, update_dur=UPDATE_DUR, master=master)
         self.signals.append(add)
         return add
 

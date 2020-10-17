@@ -108,14 +108,12 @@ class TrainGroup(QGroupBox):
         self.setTitle("Train Options")
         self.stepButton = QPushButton("1 Step")
         self.autoStepButton = QPushButton("Auto Step")
-        self.trafficLightButton = QPushButton("traffic light")
         self.delayCheckBox = QCheckBox("Delay")
         self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 1, 0, 1, 1)
-        layout.addWidget(self.trafficLightButton, 2, 0, 1, 1)
-        layout.addWidget(self.delayCheckBox, 3, 0, 1, 1)
+        layout.addWidget(self.delayCheckBox, 2, 0, 1, 1)
 
         self.setLayout(layout)
  

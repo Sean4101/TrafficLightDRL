@@ -8,7 +8,7 @@ CAR_HEIGHT = 3
 
 TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
-TRAFFIC_SIGNAL_AWAY = 20
+TRAFFIC_SIGNAL_AWAY = 10
 INTERSECTION_DIAM = 20
 ROAD_WIDTH = 12
 
@@ -217,11 +217,31 @@ class Car():
         self.prev_progress = self.progress
 
 class Traffic_signal():
-    def __init__(self, def_signal):
+    def __init__(self, def_signal, update_dur, master=None):
         self.signal = def_signal
+        self.update_dur = update_dur
         self.road : Road = None
 
+        self.state = 0
+        self.timer = TrafficSignalStates.stateSignal[self.state]
+        self.master = master
+        self.isSlave = False
+        if self.master != None:
+            self.isSlave = True
+
         self.graphicsItem = None
+
+    def update(self):
+        if not self.isSlave:
+            # self.timer -= self.update_dur
+            self.timer = (self.timer * 10 - self.update_dur * 10)/10 # is basically [self.timer -= self.updateDur] but without error
+            if self.timer <= 0:
+                self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
+                self.timer = TrafficSignalStates.stateTime[self.state]
+                self.signal = TrafficSignalStates.stateSignal[self.state]
+        else:
+            self.state = (self.master.state + 3) % len(TrafficSignalStates.stateSignal)
+            self.signal = TrafficSignalStates.stateSignal[self.state]
 
     def render(self, view, scale):
         self.view = view
@@ -235,8 +255,8 @@ class Traffic_signal():
         mx = x1 + math.cos(rot+math.pi)*TRAFFIC_SIGNAL_DIST
         my = y1 + math.sin(rot+math.pi)*TRAFFIC_SIGNAL_DIST
 
-        x = mx + math.cos(rot+math.pi*3/2)*TRAFFIC_SIGNAL_DIST
-        y = my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_DIST
+        x = (mx + math.cos(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
+        y = (my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
 
         if self.graphicsItem == None:
             self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.blackPen, view.greenBrush)
@@ -252,3 +272,26 @@ class Signals(enum.IntEnum):
     GREEN = 0
     YELLOW = 1
     RED = 2
+
+
+class TrafficSignalStates:
+    R_ALL_RED_1 =   0
+    G_GREEN =       1
+    Y_YELLOW =      2
+    R_ALL_RED_2 =   3
+    R_RED =         4
+    R_COUNTER_RED = 5
+    
+    stateSignal = { 0: Signals.RED,
+                    1: Signals.GREEN,
+                    2: Signals.YELLOW,
+                    3: Signals.RED,
+                    4: Signals.RED,
+                    5: Signals.RED,}
+
+    stateTime = {   0: 2,
+                    1: 30, # Default value
+                    2: 3,
+                    3: 2,
+                    4: 30, # Default value
+                    5: 3}
