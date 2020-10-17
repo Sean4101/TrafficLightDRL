@@ -76,9 +76,8 @@ class Traffic_Simulator_Env():
         for ts in self.signals:
             ts.render(self.view, scale)
 
-    def step(self, action):
-        ''' Make an action and update the environment.\n
-            returns the next state, reward, terminal and info. '''
+    def update(self):
+        ''' Update the environment.'''
         rand1 = np.random.rand()
         rand2 = np.random.rand()
         if rand1 < 0.02:
@@ -89,6 +88,13 @@ class Traffic_Simulator_Env():
             car.update()
             if car.done:
                 self.cars.pop(index)
+
+    def makeAction(self, action):
+        ''' Make an action, change the duration of the traffic signals. '''
+        self.action = action
+
+    def getStateAndReward(self):
+        ''' returns the current state, reward, terminal and info.  '''
         state_ = None
         reward = None
         term = None

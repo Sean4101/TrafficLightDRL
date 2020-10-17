@@ -35,36 +35,32 @@ class Traffic_Simulator():
         self.autoStepping = False
 
         self.assignEvents()
-        
-    def assignEvents(self):
-        ''' Assign every buttons in widget to a method '''
-        self.train.stepButton.clicked.connect(self.envStep)
-        self.train.step10Button.clicked.connect(self.step10)
-        self.train.autoStepButton.clicked.connect(self.autoStep)
-        self.train.trafficLightButton.clicked.connect(self.trafficlight)
-
-        
-        self.render.scalingSpin.spin.valueChanged.connect(self.scale)
-
-        self.render.resetButton.clicked.connect(self.resetenv)
 
     def reset(self):
         ''' Reset the environment. '''
         self.env.enableRender(self.view)
         self.envState = self.env.reset()
+        
+    def assignEvents(self):
+        ''' Assign every buttons in widget to a method '''
+        self.train.stepButton.clicked.connect(self.envStep)
+        self.train.autoStepButton.clicked.connect(self.autoStep)
+        self.train.trafficLightButton.clicked.connect(self.trafficlight)
+        
+        self.render.scalingSpin.spin.valueChanged.connect(self.scale)
+        self.render.resetButton.clicked.connect(self.resetenv)
 
     def envStep(self):
         ''' Do one predict and update once. '''
         action = self.model.predict(self.envState)
-        state_, reward, terminal, _ = self.env.step(action)
-        self.env.renderUpdate(self.render.scalingSpin.spin.value())
-
-    def step10(self):
-        ''' Update ten times. '''
+        self.env.makeAction(action)
         for i in range(10):
-            self.envStep()
+            self.env.update()
+            self.env.renderUpdate(self.render.scalingSpin.spin.value())
             QApplication.processEvents()
-            time.sleep(0.01)
+            if self.train.delayCheckBox.isChecked():
+                time.sleep(0.01)
+        state_, reward, terminal, _ = self.env.getStateAndReward()
 
     def autoStep(self):
         ''' Toggle auto update. '''
