@@ -12,6 +12,12 @@ class Traffic_Simulator_Env():
     def __init__(self):
         ''' Initialize the environment. '''
         self.view = None
+        self.scale = 1
+        self.intersections = {}
+        self.roads = {}
+        self.paths = {}
+        self.signals = []
+        self.cars = []
 
         self.isRendering = False
 
@@ -55,32 +61,52 @@ class Traffic_Simulator_Env():
         self.path1 = self.addPath([ab, bc], 1)
         self.path2 = self.addPath([db, be], 1)
 
-        if self.isRendering:
-            self.renderScale(1)
-
-    def enableRender(self, view):
+    def toggleRender(self, enable, view):
         ''' Enable the rendering. \n
             Set the GraphicView Widget from PyQt for rendering. '''
+        self.isRendering = enable
         self.view = view
-        self.isRendering = True
+        if not self.isRendering:
+            for key in self.intersections:
+                inte = self.intersections[key]
+                if inte.graphicsItem != None:
+                    self.view.scene.removeItem(inte.graphicsItem)
+                    inte.graphicsItem = None
+            for key in self.roads:
+                road = self.roads[key]
+                if road.graphicsItem != None:
+                    self.view.scene.removeItem(road.graphicsItem)
+                    road.graphicsItem = None
+            for car in self.cars:
+                if car.graphicsItem != None:
+                    self.view.scene.removeItem(car.graphicsItem)
+                    car.graphicsItem = None
+            for ts in self.signals:
+                if ts.graphicsItem != None:
+                    self.view.scene.removeItem(ts.graphicsItem)
+                    ts.graphicsItem = None
 
-    def renderScale(self, scale):
+    def render(self, onlyNonStatic=False):
+        if self.isRendering:
+            if onlyNonStatic:
+                self.renderNonStatic()
+            else:
+                self.renderStatic()
+                self.renderNonStatic()
+
+    def renderStatic(self):
         for key in self.intersections:
             inte = self.intersections[key]
-            inte.render(self.view, scale)
+            inte.render(self.view, self.scale)
         for key in self.roads:
             road = self.roads[key]
-            road.render(self.view, scale)
-        self.renderUpdate(scale)
+            road.render(self.view, self.scale)
 
-    def renderUpdate(self, scale):
+    def renderNonStatic(self):
         for car in self.cars:
-            car.render(self.view, scale)
-        self.tsRender(scale)
-
-    def tsRender(self, scale):
+            car.render(self.view, self.scale)
         for ts in self.signals:
-            ts.render(self.view, scale)
+            ts.render(self.view, self.scale)
 
     def update(self):
         ''' Update the environment.'''

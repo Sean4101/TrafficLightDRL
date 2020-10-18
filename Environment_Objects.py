@@ -153,13 +153,13 @@ class Car():
             elif randColor == 3:
                 color = view.blueBrush
             self.graphicsItem = self.view.scene.addRect(x-h/2, y-w/2, h, w, view.blackPen, color)
-        self.graphicsItem.setRect(0, 0, h, w)
+            self.graphicsItem.setRect(0, 0, h, w)
         self.graphicsItem.setPos(x, y)
         self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
         self.done = True
-        if self.view != None:
+        if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
 
     def transit(self):
@@ -186,7 +186,7 @@ class Car():
         idx = self.road.cars.index(self)
         if idx == 0:
             if self.road.traffic_signal != None:
-                if self.road.traffic_signal.signal == Signals.GREEN:
+                if self.road.traffic_signal.signal != Signals.RED:
                     self.speed = self.maxSpd
                 elif self.road.traffic_signal.signal == Signals.RED:
                     if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m

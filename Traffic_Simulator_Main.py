@@ -25,29 +25,32 @@ class Traffic_Simulator():
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
-        self.train = self.widget.trainGroup
-        self.param = self.widget.paramGroup
-        self.render = self.widget.renderGroup
+        self.trainGroup = self.widget.trainGroup
+        self.paramGroup = self.widget.paramGroup
+        self.renderGroup = self.widget.renderGroup
 
-        #env
-        self.scale = self.env.renderScale
         # Settings
         self.autoStepping = False
 
         self.assignEvents()
+        self.scale()
 
     def reset(self):
-        ''' Reset the environment. '''
-        self.env.enableRender(self.view)
+        ''' Reset the application. '''
         self.envState = self.env.reset()
+        
+        self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
+        self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.render()
         
     def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
-        self.train.stepButton.clicked.connect(self.envStep)
-        self.train.autoStepButton.clicked.connect(self.autoStep)
+        self.trainGroup.stepButton.clicked.connect(self.envStep)
+        self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
+        self.trainGroup.resetButton.clicked.connect(self.resetenv)
         
-        self.render.scalingSpin.spin.valueChanged.connect(self.scale)
-        self.render.resetButton.clicked.connect(self.resetenv)
+        self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
+        self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
 
     def envStep(self):
         ''' Do one predict and update once. '''
@@ -55,9 +58,9 @@ class Traffic_Simulator():
         self.env.makeAction(action)
         for i in range(10):
             self.env.update()
-            self.env.renderUpdate(self.render.scalingSpin.spin.value())
+            self.env.render(onlyNonStatic=True)
             QApplication.processEvents()
-            if self.train.delayCheckBox.isChecked():
+            if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
         state_, reward, terminal, _ = self.env.getStateAndReward()
 
@@ -66,18 +69,23 @@ class Traffic_Simulator():
         self.autoStepping = not self.autoStepping
         while self.autoStepping:
             self.envStep()
-            QApplication.processEvents()
-            time.sleep(0.01)
 
     def scale(self):
-        self.env.render(self.render.scalingSpin.spin.value())
+        self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.render()
         
     def resetenv(self):
         self.view.scene.clear()
         self.env.reset()
+        self.env.render()
+
         self.autoStepping = False
-        val = self.render.scalingSpin.spin.minimum()
-        self.render.scalingSpin.spin.setValue(val)
+        val = self.renderGroup.scalingSpin.spin.minimum()
+        self.renderGroup.scalingSpin.spin.setValue(val)
+
+    def renderCheck(self):
+        self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
+        self.env.render()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

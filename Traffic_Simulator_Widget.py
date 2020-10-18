@@ -66,11 +66,6 @@ class ViewTab(QTabWidget):
         self.Tab1_UI()
         self.Tab2_UI()
 
-        self.intersections = {}
-        self.roads = {}
-        self.paths = {}
-        self.cars = [] 
-
     def Tab1_UI(self):
         layout = QVBoxLayout()
         layout.addWidget(self.envView)
@@ -96,7 +91,6 @@ class ParamGroup(QGroupBox):
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
         layout.addWidget(self.gammaSpin,2,0,1,1)
-        
 
         self.setLayout(layout)
 
@@ -108,12 +102,14 @@ class TrainGroup(QGroupBox):
         self.setTitle("Train Options")
         self.stepButton = QPushButton("1 Step")
         self.autoStepButton = QPushButton("Auto Step")
+        self.resetButton = QPushButton("Reset")
         self.delayCheckBox = QCheckBox("Delay")
         self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
         layout.addWidget(self.autoStepButton, 1, 0, 1, 1)
-        layout.addWidget(self.delayCheckBox, 2, 0, 1, 1)
+        layout.addWidget(self.resetButton, 2, 0, 1, 1)
+        layout.addWidget(self.delayCheckBox, 3, 0, 1, 1)
 
         self.setLayout(layout)
  
@@ -122,13 +118,15 @@ class RenderGroup(QGroupBox):
         super(RenderGroup, self).__init__(parent)
 
         self.setTitle("Render Options")
-        self.resetButton = QPushButton("Reset")
 
         layout = QGridLayout()
 
-        layout.addWidget(self.resetButton ,0 ,0 ,1 ,1)
+        self.renderCheckBox = QCheckBox("Render")
+        self.renderCheckBox.setChecked(True)
         self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
-        layout.addWidget(self.scalingSpin,3,0,1,1)
+
+        layout.addWidget(self.renderCheckBox, 1, 0, 1, 1)
+        layout.addWidget(self.scalingSpin, 2, 0, 1, 1)
 
         self.setLayout(layout)
         
