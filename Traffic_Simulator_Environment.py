@@ -15,13 +15,18 @@ class Traffic_Simulator_Env():
 
         self.isRendering = False
 
+        self.timer = {}
+
     def reset(self):
         ''' Rebuild the environment and reset all cars.\n
             Returns the initial state. '''
         self.intersections = {}
         self.roads = {}
         self.paths = {}
+
         self.signals = []
+        self.timer = {}
+
         self.cars = []
         self.buildEnv()
         state = None
@@ -92,6 +97,9 @@ class Traffic_Simulator_Env():
         for sig in self.signals:
             sig.update()
 
+        for tmr in self.timer:
+            tmr.update() += 0.1 #update dur
+
     def makeAction(self, action):
         ''' Make an action, change the duration of the traffic signals. '''
         self.action = action
@@ -133,6 +141,19 @@ class Traffic_Simulator_Env():
         add = Car(path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
+
+    def get_cardensity(self, carnum : Car, roadarea : 100):
+        return carnum/roadarea
+        
+    def get_speed(self, carnum : Car):
+        self.speed = 0
+        for carnum in Car:
+            speed += Car.maxSpd
+        return speed/Car
+        
+    def get_trafficflow(self):
+        #need to add a line before getting into newroad
+
 
     
 
