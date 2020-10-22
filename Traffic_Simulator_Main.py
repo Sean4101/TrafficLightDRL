@@ -48,7 +48,7 @@ class Traffic_Simulator():
         self.trainGroup.stepButton.clicked.connect(self.envStep)
         self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
         self.trainGroup.resetButton.clicked.connect(self.resetenv)
-        
+         
         self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
         self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
 
@@ -63,6 +63,7 @@ class Traffic_Simulator():
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
         state_, reward, terminal, _ = self.env.getStateAndReward()
+        print(state_)
 
     def autoStep(self):
         ''' Toggle auto update. '''

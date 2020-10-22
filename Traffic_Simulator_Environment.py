@@ -21,7 +21,7 @@ class Traffic_Simulator_Env():
 
         self.isRendering = False
 
-        self.timer = {}
+        self.timer = 0
 
     def reset(self):
         ''' Rebuild the environment and reset all cars.\n
@@ -31,7 +31,7 @@ class Traffic_Simulator_Env():
         self.paths = {}
 
         self.signals = []
-        self.timer = {}
+        self.timer = 0
 
         self.cars = []
         self.buildEnv()
@@ -110,12 +110,15 @@ class Traffic_Simulator_Env():
 
     def update(self):
         ''' Update the environment.'''
+        self.timer = (self.timer * 10 + UPDATE_DUR * 10)/10
         rand1 = np.random.rand()
         rand2 = np.random.rand()
         if rand1 < 0.02:
             self.addCar(self.path1, maxSpd=20)
         if rand2 < 0.01:
             self.addCar(self.path2, maxSpd=20)
+        for key in self.roads:
+            self.roads[key].update()
         for index, car in enumerate(self.cars):
             car.update()
             if car.done:
@@ -123,8 +126,6 @@ class Traffic_Simulator_Env():
         for sig in self.signals:
             sig.update()
 
-        for tmr in self.timer:
-            tmr.update() += 0.1 #update dur
 
     def makeAction(self, action):
         ''' Make an action, change the duration of the traffic signals. '''
@@ -132,7 +133,12 @@ class Traffic_Simulator_Env():
 
     def getStateAndReward(self):
         ''' returns the current state, reward, terminal and info.  '''
-        state_ = None
+        state_ = np.zeros((len(self.roads), 3), dtype=float)
+        for key in self.roads:
+            road = self.roads[key]
+            state_[road.number, 0] = road.get_car_density()
+            state_[road.number, 1] = road.get_mean_speed()
+            state_[road.number, 2] = road.get_trafficflow()
         reward = None
         term = None
         info = None
@@ -147,7 +153,8 @@ class Traffic_Simulator_Env():
     def addRoad(self, start : Intersection, end : Intersection, spdLim : float, traffic_signal=None):
         name = start.name+"-"+end.name
         lim = spdLim/3600*1000
-        add = Road(name, start, end, lim, traffic_signal=traffic_signal)
+        add = Road(self, name, start, end, lim, traffic_signal=traffic_signal)
+        add.number = len(self.roads)
         self.roads[add.name] = add
         return add
 
@@ -168,17 +175,9 @@ class Traffic_Simulator_Env():
         self.cars.append(add)
         return add
 
-    def get_cardensity(self, carnum : Car, roadarea : 100):
-        return carnum/roadarea
+         
         
-    def get_speed(self, carnum : Car):
-        self.speed = 0
-        for carnum in Car:
-            speed += Car.maxSpd
-        return speed/Car
-        
-    def get_trafficflow(self):
-        #need to add a line before getting into newroad
+
 
 
     

@@ -24,6 +24,7 @@ class Intersection():
 
         self.cars = []
 
+
         self.graphicsItem = None
 
     def render(self, view, scale):
@@ -38,8 +39,10 @@ class Intersection():
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
-    def __init__(self, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+    def __init__(self, env, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+        self.env = env
         self.name = name
+        self.number = -1
         self.from_ = from_
         self.to = to
         self.spdLim = spdLim*1000/3600
@@ -52,6 +55,10 @@ class Road():
         self.calculate_cords()
 
         self.cars = []
+        self.car_count_minute = []
+        self.flow_per_sec = []
+        self.trafficflow = 0
+        self.car_tot_count = 0
         
         self.graphicsItem = None
 
@@ -90,6 +97,33 @@ class Road():
         self.rot = np.angle(vec)
         self.rotd = np.angle(vec, deg=True)
 
+    def car_enter(self, car):
+        self.cars.append(car)
+        self.car_tot_count += 1
+
+    def update(self):
+        if self.env.timer % 1 == 0:
+            self.car_count_minute.append(self.car_tot_count)
+            self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
+            if len(self.car_count_minute) > 60:
+                self.car_count_minute.pop(0)
+
+    def get_car_density(self):
+        den = len(self.cars)/self.len*ROAD_WIDTH
+        return den
+
+    def get_mean_speed(self):
+        self.speedsum = 0
+        for car in self.cars:
+            self.speedsum += car.prev_speed
+        if len(self.cars) <= 0:
+            mspeed = 0
+        else:
+            mspeed = self.speedsum/len(self.cars)
+        return mspeed
+    
+    def get_trafficflow(self):
+        return self.trafficflow
 
 
 class Path():
@@ -119,7 +153,7 @@ class Car():
 
         self.done = False
 
-        self.road.cars.append(self)
+        self.road.car_enter(self)
         self.xpos = self.road.startx
         self.ypos = self.road.starty
 
@@ -172,7 +206,8 @@ class Car():
                 self.leave()
                 return True
             self.road = self.path.roads[self.stage]
-            self.road.cars.append(self)
+            self.road.car_enter(self)
+
         if self.in_intersection:
             self.transit_timer += self.update_dur
             if self.transit_timer >= TRANSIT_TIME:
@@ -215,6 +250,18 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
+    
+    def car_two_timing_delta(self):
+        delta = self.carcountnum2 - self.carcountnum1
+        self.carcountnum1 = self.carcountnum2
+        if len(self.carcount) == 60:
+            del(self.carcount[0])
+            self.carcount.append(delta)
+
+    def trafficflow(self):
+        for count in self.carcount:
+            countsum  += count
+        return countsum/60
 
 class Traffic_signal():
     def __init__(self, def_signal, update_dur, master=None):
