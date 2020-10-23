@@ -57,6 +57,7 @@ class Traffic_Simulator():
         ''' Do one predict and update once. '''
 
         action = self.model.predict(self.envState)
+        self.env.update_reward = 0
         self.env.makeAction(action)
         for i in range(10):
             self.env.update()
@@ -65,6 +66,10 @@ class Traffic_Simulator():
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
         state_, reward, terminal, _ = self.env.getStateAndReward()
+<<<<<<< HEAD
+=======
+        print(reward)
+>>>>>>> 9a5b6b1497683dc014ffec476dc31aec4fbb5e66
 
     def autoStep(self):
         ''' Toggle auto update. '''

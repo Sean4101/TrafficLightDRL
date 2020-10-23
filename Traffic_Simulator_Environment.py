@@ -18,6 +18,7 @@ class Traffic_Simulator_Env():
         self.paths = {}
         self.signals = []
         self.cars = []
+        self.update_reward = 0
 
         self.update_reward = 0
         self.master_signals = []
@@ -119,6 +120,9 @@ class Traffic_Simulator_Env():
         for ts in self.signals:
             ts.render(self.view, self.scale)
 
+    def step_init(self):
+        self.update_reward = 0
+
     def update(self):
         ''' Update the environment.'''
         self.timer = (self.timer * 10 + UPDATE_DUR * 10)/10
@@ -152,7 +156,7 @@ class Traffic_Simulator_Env():
             state_[road.number, 0] = road.get_car_density()
             state_[road.number, 1] = road.get_mean_speed()
             state_[road.number, 2] = road.get_trafficflow()
-        reward = None
+        reward = self.update_reward
         term = None
         info = None
         return state_, reward, term, info 
@@ -186,7 +190,7 @@ class Traffic_Simulator_Env():
         return add
 
     def addCar(self, path : Path, maxSpd=20.0):
-        add = Car(path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
+        add = Car(self, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
 
