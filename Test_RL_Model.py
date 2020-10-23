@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class test_model():
 
@@ -10,8 +10,8 @@ class test_model():
 
     def predict(self, state):
         ''' Returns a action based on given state. '''
-
-        return 0
+        action = np.array([[1, 40]])
+        return action
 
     def add_transition(transition):
 

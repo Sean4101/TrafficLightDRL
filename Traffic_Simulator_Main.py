@@ -1,6 +1,7 @@
 import sys
 import os
 import time
+import numpy as np
 
 from PyQt5.QtWidgets import QApplication
 
@@ -54,6 +55,7 @@ class Traffic_Simulator():
 
     def envStep(self):
         ''' Do one predict and update once. '''
+
         action = self.model.predict(self.envState)
         self.env.makeAction(action)
         for i in range(10):
@@ -63,7 +65,6 @@ class Traffic_Simulator():
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
         state_, reward, terminal, _ = self.env.getStateAndReward()
-        print(state_)
 
     def autoStep(self):
         ''' Toggle auto update. '''

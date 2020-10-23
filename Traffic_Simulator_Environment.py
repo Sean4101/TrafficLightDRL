@@ -19,6 +19,9 @@ class Traffic_Simulator_Env():
         self.signals = []
         self.cars = []
 
+        self.update_reward = 0
+        self.master_signals = []
+
         self.isRendering = False
 
         self.timer = 0
@@ -35,7 +38,14 @@ class Traffic_Simulator_Env():
 
         self.cars = []
         self.buildEnv()
-        state = None
+
+
+        state = np.zeros((len(self.roads), 3), dtype=float)
+        for key in self.roads:
+            road = self.roads[key]
+            state[road.number, 0] = road.get_car_density()
+            state[road.number, 1] = road.get_mean_speed()
+            state[road.number, 2] = road.get_trafficflow()
         return state
 
     def buildEnv(self):
@@ -44,8 +54,9 @@ class Traffic_Simulator_Env():
             addRoad(), addPath() in this method to 
             create your traffic system. '''
 
-        self.sig1 = self.addTrafficSignal(Signals.RED)
-        self.sig2 = self.addTrafficSignal(Signals.RED, self.sig1)
+        self.sig1 = self.addTrafficSignal(Signals.RED, is_master=True)
+        self.sig2 = self.addTrafficSignal(Signals.RED, is_master=False, master=self.sig1)
+        self.action_space = len(self.master_signals)
 
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 200, 0)
@@ -130,6 +141,8 @@ class Traffic_Simulator_Env():
     def makeAction(self, action):
         ''' Make an action, change the duration of the traffic signals. '''
         self.action = action
+        for idx, master in enumerate(self.master_signals):
+            master.change_duration(self.action[idx, 0], self.action[idx, 1])
 
     def getStateAndReward(self):
         ''' returns the current state, reward, terminal and info.  '''
@@ -165,8 +178,10 @@ class Traffic_Simulator_Env():
         add = Path(name, roads, current)
         return add
 
-    def addTrafficSignal(self, def_signal, master=None):
+    def addTrafficSignal(self, def_signal, is_master=False, master=None):
         add = Traffic_signal(def_signal, update_dur=UPDATE_DUR, master=master)
+        if is_master:
+            self.master_signals.append(add)
         self.signals.append(add)
         return add
 

@@ -270,6 +270,7 @@ class Traffic_signal():
         self.road : Road = None
 
         self.state = 0
+        self.states = TrafficSignalStates.stateTime
         self.timer = TrafficSignalStates.stateSignal[self.state]
         self.master = master
         self.isSlave = False
@@ -284,7 +285,7 @@ class Traffic_signal():
             self.timer = (self.timer * 10 - self.update_dur * 10)/10 # is basically [self.timer -= self.updateDur] but without error
             if self.timer <= 0:
                 self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
-                self.timer = TrafficSignalStates.stateTime[self.state]
+                self.timer = self.states[self.state]
                 self.signal = TrafficSignalStates.stateSignal[self.state]
         else:
             self.state = (self.master.state + 3) % len(TrafficSignalStates.stateSignal)
@@ -314,6 +315,10 @@ class Traffic_signal():
         if self.signal == Signals.RED:
             self.graphicsItem.setBrush(view.redBrush)
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
+
+    def change_duration(self, green, red):
+        self.states[1] = green
+        self.states[4] = red
 
 class Signals(enum.IntEnum):
     GREEN = 0
