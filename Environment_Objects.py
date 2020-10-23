@@ -132,7 +132,8 @@ class Path():
         self.current = current
 
 class Car():
-    def __init__(self, path : Path, update_dur : float, maxSpd= 20.0, view = None):
+    def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None):
+        self.env = env
         self.path = path
         self.road = path.roads[0]
         self.update_dur = update_dur
@@ -145,6 +146,8 @@ class Car():
         self.stage = 0
         self.in_intersection = True
         self.transit_timer = 0
+        self.start_time = self.env.timer
+        self.end_time = 0
 
         self.prev_progress = 0.0
         self.progress = 0.0
@@ -192,6 +195,10 @@ class Car():
         self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
+        self.end_time = self.env.timer
+        dt = self.end_time - self.start_time
+        reward = -np.log(dt)
+        self.env.update_reward += reward
         self.done = True
         if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
