@@ -1,12 +1,15 @@
 import sys
 import os
 import time
+import numpy as np
 
 from PyQt5.QtWidgets import QApplication
 
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from Test_RL_Model import test_model
+from Environment_Objects import Signals
+
 class Traffic_Simulator():
 
     def __init__(self):
@@ -23,61 +26,73 @@ class Traffic_Simulator():
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
-        self.train = self.widget.trainGroup
-        self.param = self.widget.paramGroup
-        self.render = self.widget.renderGroup
+        self.trainGroup = self.widget.trainGroup
+        self.paramGroup = self.widget.paramGroup
+        self.renderGroup = self.widget.renderGroup
 
-        #env
-        self.scale = self.env.render
         # Settings
         self.autoStepping = False
 
         self.assignEvents()
-#        self.widget.mapSize()
-    def assignEvents(self):
-        ''' Assign every buttons in widget to a method '''
-        self.train.stepButton.clicked.connect(self.envStep)
-        self.train.step10Button.clicked.connect(self.step10)
-        self.train.autoStepButton.clicked.connect(self.autoStep)
-        
-        self.render.scalingSpin.spin.valueChanged.connect(self.scale)
-
-        self.render.resetButton.clicked.connect(self.resetenv)
+        self.scale()
 
     def reset(self):
-        ''' Reset the environment. '''
-        self.env.enableRender(self.view)
+        ''' Reset the application. '''
         self.envState = self.env.reset()
+        
+        self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
+        self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.render()
+        
+    def assignEvents(self):
+        ''' Assign every buttons in widget to a method '''
+        self.trainGroup.stepButton.clicked.connect(self.envStep)
+        self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
+        self.trainGroup.resetButton.clicked.connect(self.resetenv)
+         
+        self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
+        self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
 
     def envStep(self):
         ''' Do one predict and update once. '''
-        action = self.model.predict(self.envState)
-        state_, reward, terminal, _ = self.env.step(action)
 
-    def step10(self):
-        ''' Update ten times. '''
+        action = self.model.predict(self.envState)
+        self.env.update_reward = 0
+        self.env.makeAction(action)
         for i in range(10):
-            self.envStep()
+            self.env.update()
+            self.env.render(onlyNonStatic=True)
             QApplication.processEvents()
-            time.sleep(0.1)
+            if self.trainGroup.delayCheckBox.isChecked():
+                time.sleep(0.01)
+        state_, reward, terminal, _ = self.env.getStateAndReward()
+<<<<<<< HEAD
+=======
+        print(reward)
+>>>>>>> 9a5b6b1497683dc014ffec476dc31aec4fbb5e66
 
     def autoStep(self):
         ''' Toggle auto update. '''
         self.autoStepping = not self.autoStepping
         while self.autoStepping:
             self.envStep()
-            QApplication.processEvents()
-            time.sleep(0.1)
 
     def scale(self):
-        self.env.render(Value(scalingSpin))
+        self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.render()
         
     def resetenv(self):
         self.view.scene.clear()
         self.env.reset()
+        self.env.render()
+
         self.autoStepping = False
-        val = self.render.scalingSpin.spin.minimum()
-        self.render.scalingSpin.spin.setValue(val)
+        val = self.renderGroup.scalingSpin.spin.minimum()
+        self.renderGroup.scalingSpin.spin.setValue(val)
+
+    def renderCheck(self):
+        self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
+        self.env.render()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

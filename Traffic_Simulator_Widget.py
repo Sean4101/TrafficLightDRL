@@ -52,6 +52,8 @@ class ViewTab(QTabWidget):
         self.envView = QGraphicsView(self.scene, self.tab1)
         self.envView.setGeometry(0, 0, 600, 600)
         self.redBrush = QBrush(Qt.red)
+        self.yellowBrush = QBrush(Qt.yellow)
+        self.greenBrush = QBrush(Qt.green)
         self.blueBrush = QBrush(Qt.blue)
         self.grayBrush = QBrush(Qt.gray)
         self.blackPen = QPen(Qt.black)
@@ -64,11 +66,6 @@ class ViewTab(QTabWidget):
         self.Tab1_UI()
         self.Tab2_UI()
 
-        self.intersections = {}
-        self.roads = {}
-        self.paths = {}
-        self.cars = [] 
-
     def Tab1_UI(self):
         layout = QVBoxLayout()
         layout.addWidget(self.envView)
@@ -78,10 +75,6 @@ class ViewTab(QTabWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.plot)
         self.tab2.setLayout(layout)
-
-    def addCar(self, x, y):
-        car = self.scene.addRect(x-CAR_HEIGHT/2, y-CAR_WIDTH/2, CAR_HEIGHT, CAR_WIDTH, self.blackPen, self.redBrush)
-        return car
 
 class ParamGroup(QGroupBox):
     
@@ -98,7 +91,6 @@ class ParamGroup(QGroupBox):
         layout.addWidget(self.actorlrSpin,0,0,1,1)
         layout.addWidget(self.criticlrSpin,1,0,1,1)
         layout.addWidget(self.gammaSpin,2,0,1,1)
-        
 
         self.setLayout(layout)
 
@@ -109,12 +101,15 @@ class TrainGroup(QGroupBox):
 
         self.setTitle("Train Options")
         self.stepButton = QPushButton("1 Step")
-        self.step10Button = QPushButton("10 Step")
         self.autoStepButton = QPushButton("Auto Step")
+        self.resetButton = QPushButton("Reset")
+        self.delayCheckBox = QCheckBox("Delay")
+        self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
         layout.addWidget(self.stepButton, 0, 0, 1, 1)
-        layout.addWidget(self.step10Button, 1, 0, 1, 1)
-        layout.addWidget(self.autoStepButton, 2, 0, 1, 1)
+        layout.addWidget(self.autoStepButton, 1, 0, 1, 1)
+        layout.addWidget(self.resetButton, 2, 0, 1, 1)
+        layout.addWidget(self.delayCheckBox, 3, 0, 1, 1)
 
         self.setLayout(layout)
  
@@ -123,13 +118,15 @@ class RenderGroup(QGroupBox):
         super(RenderGroup, self).__init__(parent)
 
         self.setTitle("Render Options")
-        self.resetButton = QPushButton("Reset")
 
         layout = QGridLayout()
 
-        layout.addWidget(self.resetButton ,0 ,0 ,1 ,1)
+        self.renderCheckBox = QCheckBox("Render")
+        self.renderCheckBox.setChecked(True)
         self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
-        layout.addWidget(self.scalingSpin,3,0,1,1)
+
+        layout.addWidget(self.renderCheckBox, 1, 0, 1, 1)
+        layout.addWidget(self.scalingSpin, 2, 0, 1, 1)
 
         self.setLayout(layout)
         
