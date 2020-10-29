@@ -18,7 +18,6 @@ class Traffic_Simulator_Env():
         self.paths = {}
         self.signals = []
         self.cars = []
-        self.update_reward = 0
 
         self.update_reward = 0
         self.master_signals = []
@@ -27,26 +26,23 @@ class Traffic_Simulator_Env():
 
         self.timer = 0
 
+        self.buildEnv()
+
     def reset(self):
         ''' Rebuild the environment and reset all cars.\n
             Returns the initial state. '''
-        self.intersections = {}
-        self.roads = {}
-        self.paths = {}
-
-        self.signals = []
         self.timer = 0
 
         self.cars = []
-        self.buildEnv()
 
 
-        state = np.zeros((len(self.roads), 3), dtype=float)
+        state = np.zeros((len(self.roads)* 3), dtype=float)
         for key in self.roads:
             road = self.roads[key]
-            state[road.number, 0] = road.get_car_density()
-            state[road.number, 1] = road.get_mean_speed()
-            state[road.number, 2] = road.get_trafficflow()
+            state[road.number+ 0] = road.get_car_density()
+            state[road.number+ 1] = road.get_mean_speed()
+            state[road.number+ 2] = road.get_trafficflow()
+
         return state
 
     def buildEnv(self):
@@ -57,7 +53,6 @@ class Traffic_Simulator_Env():
 
         self.sig1 = self.addTrafficSignal(Signals.RED, is_master=True)
         self.sig2 = self.addTrafficSignal(Signals.RED, is_master=False, master=self.sig1)
-        self.action_space = len(self.master_signals)
 
         a = self.addIntersection("a", 0, 0)
         b = self.addIntersection("b", 200, 0)
@@ -72,6 +67,11 @@ class Traffic_Simulator_Env():
 
         self.path1 = self.addPath([ab, bc], 1)
         self.path2 = self.addPath([db, be], 1)
+        
+        self.n_action = (len(self.signals)* 2)
+        self.action_high = 120
+        self.action_low = 12
+        self.observation_space_shape = (len(self.roads)* 3,)
 
     def toggleRender(self, enable, view):
         ''' Enable the rendering. \n
@@ -146,20 +146,28 @@ class Traffic_Simulator_Env():
         ''' Make an action, change the duration of the traffic signals. '''
         self.action = action
         for idx, master in enumerate(self.master_signals):
-            master.change_duration(self.action[idx, 0], self.action[idx, 1])
+            master.change_duration(self.action[idx], self.action[idx+1])
 
     def getStateAndReward(self):
         ''' returns the current state, reward, terminal and info.  '''
-        state_ = np.zeros((len(self.roads), 3), dtype=float)
+        state_ = np.zeros((len(self.roads)* 3), dtype=float)
         for key in self.roads:
             road = self.roads[key]
-            state_[road.number, 0] = road.get_car_density()
-            state_[road.number, 1] = road.get_mean_speed()
-            state_[road.number, 2] = road.get_trafficflow()
+            state_[road.number+ 0] = road.get_car_density()
+            state_[road.number+ 1] = road.get_mean_speed()
+            state_[road.number+ 2] = road.get_trafficflow()
         reward = self.update_reward
         term = None
         info = None
-        return state_, reward, term, info 
+        return state_, reward, term, info
+
+    def clearCarItems(self):
+        for car in self.cars:
+            if car.graphicsItem != None:
+                self.view.scene.removeItem(car.graphicsItem)
+                car.graphicsItem = None
+        for key in self.roads:
+            self.roads[key].initialize()
         
 
     def addIntersection(self, name : str, x : int, y : int, diam =20):

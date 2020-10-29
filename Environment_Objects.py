@@ -125,6 +125,9 @@ class Road():
     def get_trafficflow(self):
         return self.trafficflow
 
+    def initialize(self):
+        self.cars.clear()
+
 
 class Path():
     def __init__(self, name : str, roads : List[Road], current : float):
@@ -276,15 +279,18 @@ class Traffic_signal():
         self.update_dur = update_dur
         self.road : Road = None
 
-        self.state = 0
-        self.states = TrafficSignalStates.stateTime
-        self.timer = TrafficSignalStates.stateSignal[self.state]
+        self.initialize()
         self.master = master
         self.isSlave = False
         if self.master != None:
             self.isSlave = True
 
         self.graphicsItem = None
+
+    def initialize(self):
+        self.state = 0
+        self.states = TrafficSignalStates.stateTime
+        self.timer = TrafficSignalStates.stateSignal[self.state]
 
     def update(self):
         if not self.isSlave:

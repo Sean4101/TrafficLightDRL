@@ -7,7 +7,8 @@ from PyQt5.QtWidgets import QApplication
 
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
-from Test_RL_Model import test_model
+# from Test_RL_Model import test_model
+from SAC_Agent import Agent
 from Environment_Objects import Signals
 
 class Traffic_Simulator():
@@ -15,14 +16,13 @@ class Traffic_Simulator():
     def __init__(self):
 
         # Assign the objects
-        self.model = test_model(3, 3)       # A deep reinforcement model, which controls the signals
-                                            # in the environment also gets info from it.
-
-        self.env = Traffic_Simulator_Env()  # A environment contains cars, roads, traffic signals and
+        self.env : Traffic_Simulator_Env = Traffic_Simulator_Env()  # A environment contains cars, roads, traffic signals and
                                             # calculates how they behave.
 
         self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
                                             # also render the environment. 
+
+        self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action)
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
@@ -36,27 +36,36 @@ class Traffic_Simulator():
         self.assignEvents()
         self.scale()
 
-    def reset(self):
-        ''' Reset the application. '''
-        self.envState = self.env.reset()
-        
+    def initialize(self):
+        ''' Initialize the application. '''
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
-        self.env.render()
+        self.reset()
         
     def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
         self.trainGroup.stepButton.clicked.connect(self.envStep)
         self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
-        self.trainGroup.resetButton.clicked.connect(self.resetenv)
+        self.trainGroup.resetButton.clicked.connect(self.reset)
          
         self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
         self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
+        
+    def reset(self):
+        self.env.clearCarItems()
+        self.envState = self.env.reset()
+        self.env.render()
+
+        self.autoStepping = False
+        val = self.renderGroup.scalingSpin.spin.minimum()
+        self.renderGroup.scalingSpin.spin.setValue(val)
+
+        self.score = 0
 
     def envStep(self):
-        ''' Do one predict and update once. '''
 
-        action = self.model.predict(self.envState)
+        action = self.agent.choose_action(self.envState)
+        print(action)
         self.env.update_reward = 0
         self.env.makeAction(action)
         for i in range(10):
@@ -66,10 +75,9 @@ class Traffic_Simulator():
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
         state_, reward, terminal, _ = self.env.getStateAndReward()
-<<<<<<< HEAD
-=======
-        print(reward)
->>>>>>> 9a5b6b1497683dc014ffec476dc31aec4fbb5e66
+
+        self.score += reward
+        self.envState = state_
 
     def autoStep(self):
         ''' Toggle auto update. '''
@@ -80,15 +88,6 @@ class Traffic_Simulator():
     def scale(self):
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.env.render()
-        
-    def resetenv(self):
-        self.view.scene.clear()
-        self.env.reset()
-        self.env.render()
-
-        self.autoStepping = False
-        val = self.renderGroup.scalingSpin.spin.minimum()
-        self.renderGroup.scalingSpin.spin.setValue(val)
 
     def renderCheck(self):
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     ts.widget.show()
 
     #Rreset the environment and configures whether to render or not.
-    ts.reset()
+    ts.initialize()
 
     # Exit app.
     os._exit(app.exec_())
