@@ -5,23 +5,25 @@ import numpy as np
 from SAC_Objects import ActorNetwork, CriticNetwork, ValueNetwork, ReplayBuffer
 
 class Agent():
-    def __init__(self, alpha=0.0003, beta=0.0003, input_dims=[8],
+    def __init__(self, alpha=0.00001, beta=0.00001, input_dims=[8],
             env=None, gamma=0.99, n_actions=2, max_size=1000000, tau=0.005,
-            layer1_size=256, layer2_size=256, batch_size=256, reward_scale=2):
+            layer1_size=256, layer2_size=256, batch_size=256, reward_scale=2,
+            chkpt_dir='C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/tmp/sac'):
         self.gamma = gamma
         self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.n_actions = n_actions
+        self.chkpt_dir = chkpt_dir
 
         self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
-                    name='actor', min_action=env.action_low, max_action=env.action_high)
+                    name='actor', min_action=env.action_low, max_action=env.action_high, chkpt_dir=self.chkpt_dir)
         self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions,
-                    name='critic_1')
+                    name='critic_1', chkpt_dir=self.chkpt_dir)
         self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions,
-                    name='critic_2')
-        self.value = ValueNetwork(beta, input_dims, name='value')
-        self.target_value = ValueNetwork(beta, input_dims, name='target_value')
+                    name='critic_2', chkpt_dir=self.chkpt_dir)
+        self.value = ValueNetwork(beta, input_dims, name='value', chkpt_dir=self.chkpt_dir)
+        self.target_value = ValueNetwork(beta, input_dims, name='target_value', chkpt_dir=self.chkpt_dir)
 
         self.scale = reward_scale
         self.update_network_parameters(tau=1)

@@ -139,7 +139,7 @@ class ActorNetwork(nn.Module):
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
-
+        
 class ReplayBuffer():
     def __init__(self, max_size, input_shape, n_actions):
         self.mem_size = max_size
@@ -162,7 +162,7 @@ class ReplayBuffer():
         self.mem_cntr += 1
 
     def sample_buffer(self, batch_size):
-        max_mem = min(max_mem, batch_size)
+        max_mem = min(self.mem_cntr, self.mem_size)
         
         batch = np.random.choice(max_mem, batch_size)
         states = self.state_memory[batch]

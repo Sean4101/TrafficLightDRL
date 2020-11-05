@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QApplication
 
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
-# from Test_RL_Model import test_model
 from SAC_Agent import Agent
 from Environment_Objects import Signals
 
@@ -32,7 +31,7 @@ class Traffic_Simulator():
 
         # Settings
         self.autoStepping = False
-
+        self.max_step = 1200
         self.assignEvents()
         self.scale()
 
@@ -40,6 +39,7 @@ class Traffic_Simulator():
         ''' Initialize the application. '''
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.episode_cnt = 1
         self.reset()
         
     def assignEvents(self):
@@ -55,18 +55,22 @@ class Traffic_Simulator():
         self.env.clearCarItems()
         self.envState = self.env.reset()
         self.env.render()
+        self.update_timer()
 
         self.autoStepping = False
         val = self.renderGroup.scalingSpin.spin.minimum()
         self.renderGroup.scalingSpin.spin.setValue(val)
 
+        self.step_cnt = 0
+        self.score_history = []
+        self.best_score = 0
         self.score = 0
 
     def envStep(self):
 
+        self.step_cnt += 1
         action = self.agent.choose_action(self.envState)
         print(action)
-        self.env.update_reward = 0
         self.env.makeAction(action)
         for i in range(10):
             self.env.update()
@@ -74,10 +78,34 @@ class Traffic_Simulator():
             QApplication.processEvents()
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
+            self.update_timer()
+            self.widget.trainGroup.step_label.setText("steps: "+str(self.step_cnt))
         state_, reward, terminal, _ = self.env.getStateAndReward()
 
         self.score += reward
+        self.agent.remember(self.envState, action, reward, state_, terminal)
+        self.agent.learn()
         self.envState = state_
+
+        if self.step_cnt >= self.max_step:
+            self.episode_end()
+
+
+    def episode_end(self):
+        self.score_history.append(self.score)
+        avg_score = np.mean(self.score_history[-100:])
+
+        if avg_score > self.best_score:
+            self.best_score = avg_score
+            #if not load_checkpoint:
+            #    self.agent.save_models()
+            self.agent.save_models()
+        
+        print('episode ', self.episode_cnt, 'score %.1f' % self.score, 'avg_score %.1f' % avg_score)
+
+        self.episode_cnt += 1
+        self.reset()
+        self.autoStep()
 
     def autoStep(self):
         ''' Toggle auto update. '''
@@ -92,6 +120,23 @@ class Traffic_Simulator():
     def renderCheck(self):
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.render()
+
+    def update_timer(self):
+        secs = int(self.env.timer)
+        mins = int(secs / 60)
+        secs %= 60
+        hours = str(int(mins / 60))
+        mins %= 60
+        if secs < 10:
+            secs = "0"+str(secs)
+        else:
+            secs = str(secs)
+        if mins < 10:
+            mins = "0"+str(mins)
+        else:
+            mins = str(mins)
+        timer = "Timer: "+hours+":"+mins+":"+secs
+        self.widget.trainGroup.timer_label.setText(timer)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

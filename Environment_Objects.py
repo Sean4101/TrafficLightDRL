@@ -200,7 +200,7 @@ class Car():
     def leave(self):
         self.end_time = self.env.timer
         dt = self.end_time - self.start_time
-        reward = -np.log(dt)
+        reward = -dt+200
         self.env.update_reward += reward
         self.done = True
         if self.view != None and self.graphicsItem != None:
@@ -345,7 +345,7 @@ class TrafficSignalStates:
     Y_YELLOW =      2
     R_ALL_RED_2 =   3
     R_RED =         4
-    R_COUNTER_RED = 5
+    R_COUNTER_YELLOW = 5
     
     stateSignal = { 0: Signals.RED,
                     1: Signals.GREEN,

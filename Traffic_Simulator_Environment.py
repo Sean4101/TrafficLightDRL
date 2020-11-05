@@ -13,6 +13,7 @@ class Traffic_Simulator_Env():
         ''' Initialize the environment. '''
         self.view = None
         self.scale = 1
+
         self.intersections = {}
         self.roads = {}
         self.paths = {}
@@ -23,8 +24,6 @@ class Traffic_Simulator_Env():
         self.master_signals = []
 
         self.isRendering = False
-
-        self.timer = 0
 
         self.buildEnv()
 
