@@ -70,8 +70,8 @@ class Traffic_Simulator():
 
         self.step_cnt += 1
         action = self.agent.choose_action(self.envState)
-        print(action)
         self.env.makeAction(action)
+        print(action)
         for i in range(10):
             self.env.update()
             self.env.render(onlyNonStatic=True)

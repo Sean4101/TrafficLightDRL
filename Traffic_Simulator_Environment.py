@@ -127,7 +127,7 @@ class Traffic_Simulator_Env():
         self.timer = (self.timer * 10 + UPDATE_DUR * 10)/10
         rand1 = np.random.rand()
         rand2 = np.random.rand()
-        if rand1 < 0.02:
+        if rand1 < 0.015:
             self.addCar(self.path1, maxSpd=20)
         if rand2 < 0.01:
             self.addCar(self.path2, maxSpd=20)
@@ -141,11 +141,15 @@ class Traffic_Simulator_Env():
             sig.update()
 
 
-    def makeAction(self, action):
+    def makeAction(self, raw_action):
         ''' Make an action, change the duration of the traffic signals. '''
-        self.action = action
+        ones = np.ones(shape=raw_action.shape)
+        self.action = 54*raw_action+66*ones
+
         for idx, master in enumerate(self.master_signals):
-            master.change_duration(self.action[idx], self.action[idx+1])
+            green = self.action[idx]
+            red = self.action[idx+1]
+            master.change_duration(green, red)
 
     def getStateAndReward(self):
         ''' returns the current state, reward, terminal and info.  '''
