@@ -130,9 +130,13 @@ class Road():
 
 
 class Path():
+    ''' Add a new path that cars follow.
+        Current: Cars per minute '''
     def __init__(self, name : str, roads : List[Road], current : float):
+        self.name = name
         self.roads = roads
-        self.current = current
+        self.current = current # Cars per minute
+
 
 class Car():
     def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None):
@@ -200,11 +204,15 @@ class Car():
     def leave(self):
         self.end_time = self.env.timer
         dt = self.end_time - self.start_time
-        reward = -dt+200
-        self.env.update_reward += reward
+        # reward = -dt+200
+        # self.env.update_reward += reward
         self.done = True
         if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
+
+    def getWaitTime(self):
+        curTime = self.env.timer
+        return curTime - self.start_time
 
     def transit(self):
         if self.progress >= self.road.len:

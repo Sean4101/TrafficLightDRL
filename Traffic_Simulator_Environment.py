@@ -64,8 +64,8 @@ class Traffic_Simulator_Env():
         db = self.addRoad(d, b, 60, self.sig2)
         be = self.addRoad(b, e, 60)
 
-        self.path1 = self.addPath([ab, bc], 1)
-        self.path2 = self.addPath([db, be], 1)
+        self.path1 = self.addPath([ab, bc], 20)
+        self.path2 = self.addPath([db, be], 14)
         
         self.n_action = (len(self.signals)* 2)
         self.action_high = 120
@@ -125,12 +125,12 @@ class Traffic_Simulator_Env():
     def update(self):
         ''' Update the environment.'''
         self.timer = (self.timer * 10 + UPDATE_DUR * 10)/10
-        rand1 = np.random.rand()
-        rand2 = np.random.rand()
-        if rand1 < 0.015:
-            self.addCar(self.path1, maxSpd=20)
-        if rand2 < 0.01:
-            self.addCar(self.path2, maxSpd=20)
+        for key in self.paths:
+            path = self.paths[key]
+            rand = np.random.rand()
+            prob = path.current/10/60
+            if rand < prob:
+                self.addCar(path)
         for key in self.roads:
             self.roads[key].update()
         for index, car in enumerate(self.cars):
@@ -144,7 +144,9 @@ class Traffic_Simulator_Env():
     def makeAction(self, raw_action):
         ''' Make an action, change the duration of the traffic signals. '''
         ones = np.ones(shape=raw_action.shape)
-        self.action = 54*raw_action+66*ones
+        a = (self.action_high-self.action_low)/2 # f(x)=ax+b
+        b = (self.action_high+self.action_low)/2 # low < f(x) < high
+        self.action = a*raw_action+b*ones
 
         for idx, master in enumerate(self.master_signals):
             green = self.action[idx]
@@ -153,16 +155,27 @@ class Traffic_Simulator_Env():
 
     def getStateAndReward(self):
         ''' returns the current state, reward, terminal and info.  '''
-        state_ = np.zeros((len(self.roads)* 3), dtype=float)
-        for key in self.roads:
-            road = self.roads[key]
-            state_[road.number+ 0] = road.get_car_density()
-            state_[road.number+ 1] = road.get_mean_speed()
-            state_[road.number+ 2] = road.get_trafficflow()
-        reward = self.update_reward
+        state_ = self.calculateState()
+        reward = self.calculateReward()
+        print(reward)
         term = None
         info = None
         return state_, reward, term, info
+
+    def calculateState(self):
+        state = np.zeros((len(self.roads)* 3), dtype=float)
+        for key in self.roads:
+            road = self.roads[key]
+            state[road.number+ 0] = road.get_car_density()
+            state[road.number+ 1] = road.get_mean_speed()
+            state[road.number+ 2] = road.get_trafficflow()
+        return state
+
+    def calculateReward(self):
+        reward = 0
+        for car in self.cars:
+            reward -= car.getWaitTime()
+        return reward
 
     def clearCarItems(self):
         for car in self.cars:
@@ -191,6 +204,7 @@ class Traffic_Simulator_Env():
         for i in range(len(roads) - 1):
             name += "," + roads[i+1].name
         add = Path(name, roads, current)
+        self.paths[add.name] = add
         return add
 
     def addTrafficSignal(self, def_signal, is_master=False, master=None):

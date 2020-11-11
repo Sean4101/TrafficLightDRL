@@ -55,7 +55,6 @@ class Traffic_Simulator():
         self.env.clearCarItems()
         self.envState = self.env.reset()
         self.env.render()
-        self.update_timer()
 
         self.autoStepping = False
         val = self.renderGroup.scalingSpin.spin.minimum()
@@ -65,13 +64,16 @@ class Traffic_Simulator():
         self.score_history = []
         self.best_score = 0
         self.score = 0
+        self.update_episode_cnt()
+        self.update_step_cnt()
+        self.update_timer()
 
     def envStep(self):
 
         self.step_cnt += 1
+        self.update_step_cnt()
         action = self.agent.choose_action(self.envState)
         self.env.makeAction(action)
-        print(action)
         for i in range(10):
             self.env.update()
             self.env.render(onlyNonStatic=True)
@@ -79,7 +81,6 @@ class Traffic_Simulator():
             if self.trainGroup.delayCheckBox.isChecked():
                 time.sleep(0.01)
             self.update_timer()
-            self.widget.trainGroup.step_label.setText("steps: "+str(self.step_cnt))
         state_, reward, terminal, _ = self.env.getStateAndReward()
 
         self.score += reward
@@ -137,6 +138,12 @@ class Traffic_Simulator():
             mins = str(mins)
         timer = "Timer: "+hours+":"+mins+":"+secs
         self.widget.trainGroup.timer_label.setText(timer)
+
+    def update_step_cnt(self):
+        self.widget.trainGroup.step_label.setText("steps: "+str(self.step_cnt))
+
+    def update_episode_cnt(self):
+        self.widget.trainGroup.episode_label.setText("episodes: "+str(self.episode_cnt))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
