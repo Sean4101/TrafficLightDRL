@@ -7,6 +7,8 @@ UPDATE_DUR = 0.1
 RENDER_DUR = 1
 RL_UPDATE_DUR = 2
 
+PENALTY = 1000
+
 class Traffic_Simulator_Env():
 
     def __init__(self):
@@ -33,7 +35,7 @@ class Traffic_Simulator_Env():
         self.timer = 0
 
         self.cars = []
-
+        self.penalty = 0
 
         state = np.zeros((len(self.roads)* 3), dtype=float)
         for key in self.roads:
@@ -150,7 +152,10 @@ class Traffic_Simulator_Env():
             rand = np.random.rand()
             prob = path.current/10/60
             if rand < prob:
-                self.addCar(path)
+                if path.roads[0].isAvailable():
+                    self.addCar(path)
+                else:
+                    self.penalty -= PENALTY
         for key in self.roads:
             self.roads[key].update()
         for index, car in enumerate(self.cars):
@@ -195,6 +200,7 @@ class Traffic_Simulator_Env():
         reward = 0
         for car in self.cars:
             reward -= car.getWaitTime()
+        reward += self.penalty
         return reward
 
     def clearCarItems(self):

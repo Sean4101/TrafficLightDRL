@@ -128,6 +128,12 @@ class Road():
     def initialize(self):
         self.cars.clear()
 
+    def isAvailable(self):
+        if len(self.cars) >= 1:
+            if self.cars[len(self.cars)-1].progress < SAFE_DIST:
+                return False
+        return True
+
 
 class Path():
     ''' Add a new path that cars follow.
@@ -238,7 +244,13 @@ class Car():
         if idx == 0:
             if self.road.traffic_signal != None:
                 if self.road.traffic_signal.signal != Signals.RED:
-                    self.speed = self.maxSpd
+                    if self.stage < self.tot_stages - 1:
+                        if self.path.roads[self.stage+1].isAvailable() == False:
+                            self.speed = 0
+                        else:
+                            self.speed = self.maxSpd
+                    else:
+                        self.speed = self.maxSpd
                 elif self.road.traffic_signal.signal == Signals.RED:
                     if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m
                         self.speed = 0
