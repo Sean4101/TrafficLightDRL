@@ -33,6 +33,7 @@ class Traffic_Simulator():
         self.autoStepping = False
         self.max_step = 1200
         self.assignEvents()
+        self.score_history = []
         self.scale()
 
     def initialize(self):
@@ -61,7 +62,6 @@ class Traffic_Simulator():
         self.renderGroup.scalingSpin.spin.setValue(val)
 
         self.step_cnt = 0
-        self.score_history = []
         self.best_score = 0
         self.score = 0
         self.update_episode_cnt()

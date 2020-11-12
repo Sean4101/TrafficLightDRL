@@ -204,8 +204,6 @@ class Car():
     def leave(self):
         self.end_time = self.env.timer
         dt = self.end_time - self.start_time
-        # reward = -dt+200
-        # self.env.update_reward += reward
         self.done = True
         if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
@@ -297,13 +295,12 @@ class Traffic_signal():
 
     def initialize(self):
         self.state = 0
-        self.states = TrafficSignalStates.stateTime
+        self.states = TrafficSignalStates.stateTime.copy()
         self.timer = TrafficSignalStates.stateSignal[self.state]
 
     def update(self):
         if not self.isSlave:
-            # self.timer -= self.update_dur
-            self.timer = (self.timer * 10 - self.update_dur * 10)/10 # is basically [self.timer -= self.updateDur] but without error
+            self.timer = (self.timer * 10 - self.update_dur * 10)/10
             if self.timer <= 0:
                 self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
                 self.timer = self.states[self.state]
