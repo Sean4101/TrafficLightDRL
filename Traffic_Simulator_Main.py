@@ -31,7 +31,7 @@ class Traffic_Simulator():
 
         # Settings
         self.autoStepping = False
-        self.max_step = 100
+        self.max_step = 360
         self.assignEvents()
         self.score_history = []
         self.scale()
@@ -107,8 +107,6 @@ class Traffic_Simulator():
         print('episode ', self.episode_cnt, 'score %.1f' % self.score, 'avg_score %.1f' % avg_score)
 
         cnt_list = list(range(1, len(self.score_history)+1))
-        print(len(cnt_list))
-        print(len(self.score_history))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
 
