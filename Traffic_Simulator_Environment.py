@@ -37,12 +37,14 @@ class Traffic_Simulator_Env():
         self.cars = []
         self.penalty = 0
 
-        state = np.zeros((len(self.roads)* 3), dtype=float)
+        state = np.zeros((len(self.roads)* 3 + len(self.master_signals)), dtype=float)
         for key in self.roads:
             road = self.roads[key]
             state[road.number+ 0] = road.get_car_density()
             state[road.number+ 1] = road.get_mean_speed()
             state[road.number+ 2] = road.get_trafficflow()
+        for idx, sig in enumerate(self.master_signals):
+            state[len(self.roads)* 3+idx] = sig.get_next_green_time()
 
         return state
 
@@ -95,7 +97,8 @@ class Traffic_Simulator_Env():
         self.n_action = (len(self.master_signals)* 2)
         self.action_high = 120
         self.action_low = 12
-        self.observation_space_shape = (len(self.roads)* 3,)
+        self.n_state = len(self.roads)* 3 + len(self.master_signals)
+        self.observation_space_shape = (self.n_state,)
 
     def toggleRender(self, enable, view):
         ''' Enable the rendering. \n
@@ -188,12 +191,14 @@ class Traffic_Simulator_Env():
         return state_, reward, term, info
 
     def calculateState(self):
-        state = np.zeros((len(self.roads)* 3), dtype=float)
+        state = np.zeros((self.n_state), dtype=float)
         for key in self.roads:
             road = self.roads[key]
             state[road.number+ 0] = road.get_car_density()
             state[road.number+ 1] = road.get_mean_speed()
             state[road.number+ 2] = road.get_trafficflow()
+        for idx, sig in enumerate(self.master_signals):
+            state[len(self.roads)* 3+idx] = sig.get_next_green_time()
         return state
 
     def calculateReward(self):

@@ -40,7 +40,7 @@ class Traffic_Simulator():
         ''' Initialize the application. '''
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
-        self.episode_cnt = 1
+        self.episode_cnt = 0
         self.reset()
         
     def assignEvents(self):
@@ -64,6 +64,7 @@ class Traffic_Simulator():
         self.step_cnt = 0
         self.best_score = 0
         self.score = 0
+        self.episode_cnt += 1
         self.update_episode_cnt()
         self.update_step_cnt()
         self.update_timer()
@@ -104,7 +105,12 @@ class Traffic_Simulator():
         
         print('episode ', self.episode_cnt, 'score %.1f' % self.score, 'avg_score %.1f' % avg_score)
 
-        self.episode_cnt += 1
+        cnt_list = list(range(1, len(self.score_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
+
+        self.view.plot.canvas.draw()
+        
         self.reset()
         self.autoStep()
 

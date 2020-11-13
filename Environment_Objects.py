@@ -350,6 +350,19 @@ class Traffic_signal():
         self.states[1] = green
         self.states[4] = red
 
+    def get_next_green_time(self):
+        i = self.state
+        time = 0
+        if i == 1:
+            pass
+        else:
+            time += self.timer
+            i = (i + 1) % len(TrafficSignalStates.stateTime)
+            while i != 1:
+                time += self.states[i]
+                i = (i + 1) % len(TrafficSignalStates.stateTime)
+        return time
+
 class Signals(enum.IntEnum):
     GREEN = 0
     YELLOW = 1
