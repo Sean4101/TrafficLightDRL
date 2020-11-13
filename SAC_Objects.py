@@ -126,7 +126,7 @@ class ActorNetwork(nn.Module):
             actions = probabilities.rsample()
         else:
             actions = probabilities.sample()
-        action = T.sigmoid(actions)
+        action = T.tanh(actions)
         log_probs = probabilities.log_prob(actions)
         log_probs -= T.log(1-action.pow(2)+self.reparam_noise)
         log_probs = log_probs.sum(1, keepdim=True)

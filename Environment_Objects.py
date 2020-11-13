@@ -130,7 +130,7 @@ class Road():
 
     def isAvailable(self):
         if len(self.cars) >= 1:
-            if self.cars[len(self.cars)-1].progress < SAFE_DIST:
+            if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
                 return False
         return True
 
@@ -138,10 +138,10 @@ class Road():
 class Path():
     ''' Add a new path that cars follow.
         Current: Cars per minute '''
-    def __init__(self, name : str, roads : List[Road], current : float):
+    def __init__(self, name : str, roads : List[Road], flow : float):
         self.name = name
         self.roads = roads
-        self.current = current # Cars per minute
+        self.flow = flow # Cars per minute
 
 
 class Car():
@@ -245,13 +245,14 @@ class Car():
             if self.road.traffic_signal != None:
                 if self.road.traffic_signal.signal != Signals.RED:
                     if self.stage < self.tot_stages - 1:
-                        if self.path.roads[self.stage+1].isAvailable() == False:
+                        if self.path.roads[self.stage+1].isAvailable() == False and \
+                           self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST:
                             self.speed = 0
                         else:
                             self.speed = self.maxSpd
                     else:
                         self.speed = self.maxSpd
-                elif self.road.traffic_signal.signal == Signals.RED:
+                else:
                     if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m
                         self.speed = 0
                     else:
@@ -278,18 +279,8 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
-    
-    def car_two_timing_delta(self):
-        delta = self.carcountnum2 - self.carcountnum1
-        self.carcountnum1 = self.carcountnum2
-        if len(self.carcount) == 60:
-            del(self.carcount[0])
-            self.carcount.append(delta)
 
-    def trafficflow(self):
-        for count in self.carcount:
-            countsum  += count
-        return countsum/60
+    
 
 class Traffic_signal():
     def __init__(self, def_signal, update_dur, master=None):
@@ -349,6 +340,19 @@ class Traffic_signal():
     def change_duration(self, green, red):
         self.states[1] = green
         self.states[4] = red
+
+    def get_next_green_time(self):
+        i = self.state
+        time = 0
+        if i == 1:
+            pass
+        else:
+            time += self.timer
+            i = (i + 1) % len(TrafficSignalStates.stateTime)
+            while i != 1:
+                time += self.states[i]
+                i = (i + 1) % len(TrafficSignalStates.stateTime)
+        return time
 
 class Signals(enum.IntEnum):
     GREEN = 0
