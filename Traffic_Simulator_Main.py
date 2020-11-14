@@ -6,7 +6,7 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication
 
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
-from Traffic_Simulator_Widget import mainWidget, ViewTab
+from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
 from Environment_Objects import Signals
 
@@ -31,7 +31,11 @@ class Traffic_Simulator():
 
         # Settings
         self.autoStepping = False
+<<<<<<< HEAD
         self.max_step = 360
+=======
+        self.max_step = 1200
+>>>>>>> 38548f4837d5e90de090b96250e7148fbaee8e3d
         self.assignEvents()
         self.score_history = []
         self.scale()
@@ -65,7 +69,6 @@ class Traffic_Simulator():
         self.best_score = 0
         self.score = 0
         self.episode_cnt += 1
-
         self.update_episode_cnt()
         self.update_step_cnt()
         self.update_timer()
@@ -111,7 +114,7 @@ class Traffic_Simulator():
         self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
 
         self.view.plot.canvas.draw()
-
+        
         self.reset()
         self.autoStep()
 
