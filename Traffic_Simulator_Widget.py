@@ -34,10 +34,10 @@ class mainWidget(QWidget):
     
     def main_UI(self):
         mainLayout = QGridLayout()
-        mainLayout.addWidget(self.ViewTab, 0, 0, 3, 1)
+        mainLayout.addWidget(self.ViewTab, 0, 0, 4, 1)
         mainLayout.addWidget(self.paramGroup, 0, 1, 1, 1)
-        mainLayout.addWidget(self.trainGroup, 1, 1, 1, 1)
-        mainLayout.addWidget(self.renderGroup, 2, 1, 1, 1)
+        mainLayout.addWidget(self.trainGroup, 1, 1, 2, 1)
+        mainLayout.addWidget(self.renderGroup, 3, 1, 1, 1)
         self.setLayout(mainLayout)
 
 class ViewTab(QTabWidget):
@@ -100,16 +100,23 @@ class TrainGroup(QGroupBox):
         super(TrainGroup, self).__init__(parent)
 
         self.setTitle("Train Options")
+        self.episode_label = QLabel("Episode: 0")
+        self.step_label = QLabel("Steps: 0")
+        self.timer_label = QLabel("Timer: 0:00:00")
+        self.resetButton = QPushButton("Reset")
         self.stepButton = QPushButton("1 Step")
         self.autoStepButton = QPushButton("Auto Step")
-        self.resetButton = QPushButton("Reset")
         self.delayCheckBox = QCheckBox("Delay")
         self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
-        layout.addWidget(self.stepButton, 0, 0, 1, 1)
-        layout.addWidget(self.autoStepButton, 1, 0, 1, 1)
-        layout.addWidget(self.resetButton, 2, 0, 1, 1)
-        layout.addWidget(self.delayCheckBox, 3, 0, 1, 1)
+
+        layout.addWidget(self.episode_label, 0, 0, 1, 1)
+        layout.addWidget(self.step_label, 1, 0, 1, 1)
+        layout.addWidget(self.timer_label, 2, 0, 1, 1)
+        layout.addWidget(self.resetButton, 3, 0, 1, 1)
+        layout.addWidget(self.stepButton, 4, 0, 1, 1)
+        layout.addWidget(self.autoStepButton, 5, 0, 1, 1)
+        layout.addWidget(self.delayCheckBox, 6, 0, 1, 1)
 
         self.setLayout(layout)
  

@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import enum
-from typing import List
+from typing import List 
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
@@ -56,8 +56,21 @@ class Road():
 
         self.cars = []
         self.car_count_minute = []
+        self.car_density = []
+        self.car_speed = []
+
+        for i in range(300):
+            self.car_count_minute.append(0)
+            self.car_density.append(0)
+            self.car_speed.append(0)
         self.flow_per_sec = []
         self.trafficflow = 0
+        self.trafficflow_in_minute = 0
+        self.trafficflow_in_two_minute = 0
+        self.trafficflow_in_five_minute = 0
+        self.density_per_one_minute = 0
+        self.density_per_two_minute = 0
+        self.density_per_five_minute=  0
         self.car_tot_count = 0
         
         self.graphicsItem = None
@@ -105,13 +118,72 @@ class Road():
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
-            if len(self.car_count_minute) > 60:
+            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH)
+            self.car_speed.append(self.speed())
+            if len(self.car_count_minute) > 300:
                 self.car_count_minute.pop(0)
+                self.car_density.pop(0)
+                self.car_speed.pop(0)
 
-    def get_car_density(self):
+    def speed(self):
+        self.speedsum = 0
+        for car in self.cars:
+            self.speedsum += car.prev_speed
+        if len(self.cars) == 0:
+            mspeed = 0
+        else:
+            mspeed = self.speedsum/len(self.cars)
+        return mspeed
+
+    def get_car_density(self, minute):
+        den = 0
+        for i in range((5-minute)*60, 5*60):
+            den += self.car_density[i]
+        return den/minute
+
+    def get_mean_speed(self, minute):
+        speed = 0
+        for i in range((5-minute)*60, 5*60):
+            speed += self.car_speed[i]
+        return speed/(minute*60)
+
+    def get_trafficflow(self, minute):
+        countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
+        return countsum/minute
+
+        
+    def initialize(self):
+        self.cars.clear()
+
+    def isAvailable(self):
+        if len(self.cars) >= 1:
+            if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
+                return False
+        return True
+'''    def get_car_density(self):
         den = len(self.cars)/self.len*ROAD_WIDTH
+        #print("org", den)
+        #print("five", self.get_trafficflow_in_five_minute()/self.len*ROAD_WIDTH)
         return den
 
+    def get_car_density_per_one_minute(self):
+        den = 0
+        for i in range(300, 240):
+            den += self.car_density[i]
+        return den
+    
+    def get_car_density_per_two_minute(self):
+        den = 0
+        for i in range(300, 180):
+            den += self.car_density[i]
+        return den/2
+    
+    def get_car_density_per_five_minute(self):
+        den = 0
+        for i in range(300, 0):
+            den += self.car_density[i]
+        return den/5
+    
     def get_mean_speed(self):
         self.speedsum = 0
         for car in self.cars:
@@ -121,15 +193,27 @@ class Road():
         else:
             mspeed = self.speedsum/len(self.cars)
         return mspeed
-    
-    def get_trafficflow(self):
-        return self.trafficflow
+
+    def get_trafficflow_in_minute(self):
+        return self.trafficflow_in_minute
+
+    def get_trafficflow_in_two_minute(self):
+        return self.trafficflow_in_two_minute
+
+    def get_trafficflow_in_five_minute(self):
+        return self.trafficflow_in_five_minute'''
+
+
 
 
 class Path():
-    def __init__(self, name : str, roads : List[Road], current : float):
+    ''' Add a new path that cars follow.
+        Current: Cars per minute '''
+    def __init__(self, name : str, roads : List[Road], flow : float):
+        self.name = name
         self.roads = roads
-        self.current = current
+        self.flow = flow # Cars per minute
+
 
 class Car():
     def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None):
@@ -197,17 +281,20 @@ class Car():
     def leave(self):
         self.end_time = self.env.timer
         dt = self.end_time - self.start_time
-        reward = -np.log(dt)
-        self.env.update_reward += reward
         self.done = True
         if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
+
+    def getWaitTime(self):
+        curTime = self.env.timer
+        return curTime - self.start_time
 
     def transit(self):
         if self.progress >= self.road.len:
             self.in_intersection = True
             self.progress = 0
             self.road.cars.remove(self)
+        
             self.stage += 1
             if self.stage >= self.tot_stages:
                 self.leave()
@@ -229,8 +316,15 @@ class Car():
         if idx == 0:
             if self.road.traffic_signal != None:
                 if self.road.traffic_signal.signal != Signals.RED:
-                    self.speed = self.maxSpd
-                elif self.road.traffic_signal.signal == Signals.RED:
+                    if self.stage < self.tot_stages - 1:
+                        if self.path.roads[self.stage+1].isAvailable() == False and \
+                           self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST:
+                            self.speed = 0
+                        else:
+                            self.speed = self.maxSpd
+                    else:
+                        self.speed = self.maxSpd
+                else:
                     if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m
                         self.speed = 0
                     else:
@@ -257,6 +351,7 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
+
     
     def car_two_timing_delta(self):
         delta = self.carcountnum2 - self.carcountnum1
@@ -264,11 +359,29 @@ class Car():
         if len(self.carcount) == 60:
             del(self.carcount[0])
             self.carcount.append(delta)
+'''
+    def trafficflow(self, minute):
+        self.minute = minute
+        for i in range(minute*60):
+            countsum += carcount[i]
+        return countsum/minute
 
-    def trafficflow(self):
-        for count in self.carcount:
-            countsum  += count
-        return countsum/60
+    def trafficflow_in_minute(self):
+        for i in range(60):
+            countsum  += carcount[i]
+        return countsum
+
+    def trafficflow_in_two_minute(self):
+        for i in range(120):
+            countsum  += carcount[i]
+        return countsum/2
+
+    def trafficflow_in_five_minute(self):
+        for i in range(300):
+            countsum  += carcount[i]
+        return countsum/5'''
+
+    
 
 class Traffic_signal():
     def __init__(self, def_signal, update_dur, master=None):
@@ -276,9 +389,7 @@ class Traffic_signal():
         self.update_dur = update_dur
         self.road : Road = None
 
-        self.state = 0
-        self.states = TrafficSignalStates.stateTime
-        self.timer = TrafficSignalStates.stateSignal[self.state]
+        self.initialize()
         self.master = master
         self.isSlave = False
         if self.master != None:
@@ -286,10 +397,14 @@ class Traffic_signal():
 
         self.graphicsItem = None
 
+    def initialize(self):
+        self.state = 0
+        self.states = TrafficSignalStates.stateTime.copy()
+        self.timer = TrafficSignalStates.stateSignal[self.state]
+
     def update(self):
         if not self.isSlave:
-            # self.timer -= self.update_dur
-            self.timer = (self.timer * 10 - self.update_dur * 10)/10 # is basically [self.timer -= self.updateDur] but without error
+            self.timer = (self.timer * 10 - self.update_dur * 10)/10
             if self.timer <= 0:
                 self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
                 self.timer = self.states[self.state]
@@ -327,6 +442,19 @@ class Traffic_signal():
         self.states[1] = green
         self.states[4] = red
 
+    def get_next_green_time(self):
+        i = self.state
+        time = 0
+        if i == 1:
+            pass
+        else:
+            time += self.timer
+            i = (i + 1) % len(TrafficSignalStates.stateTime)
+            while i != 1:
+                time += self.states[i]
+                i = (i + 1) % len(TrafficSignalStates.stateTime)
+        return time
+
 class Signals(enum.IntEnum):
     GREEN = 0
     YELLOW = 1
@@ -339,7 +467,7 @@ class TrafficSignalStates:
     Y_YELLOW =      2
     R_ALL_RED_2 =   3
     R_RED =         4
-    R_COUNTER_RED = 5
+    R_COUNTER_YELLOW = 5
     
     stateSignal = { 0: Signals.RED,
                     1: Signals.GREEN,
