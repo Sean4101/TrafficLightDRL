@@ -5,8 +5,8 @@ import numpy as np
 from SAC_Objects import ActorNetwork, CriticNetwork, ValueNetwork, ReplayBuffer
 
 class Agent():
-    def __init__(self, alpha=0.001, beta=0.001, input_dims=[8],
-            env=None, gamma=0.999, n_actions=2, max_size=1000000, tau=0.005,
+    def __init__(self, alpha=0.00001, beta=0.00001, input_dims=[8],
+            env=None, gamma=1-1e07, n_actions=2, max_size=1000000, tau=0.005,
             layer1_size=256, layer2_size=256, batch_size=32, reward_scale=1,
             chkpt_dir='C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/tmp/sac'):
         self.gamma = gamma
@@ -15,6 +15,7 @@ class Agent():
         self.batch_size = batch_size
         self.n_actions = n_actions
         self.chkpt_dir = chkpt_dir
+
 
         self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
                     name='actor', min_action=env.action_low, max_action=env.action_high, chkpt_dir=self.chkpt_dir)

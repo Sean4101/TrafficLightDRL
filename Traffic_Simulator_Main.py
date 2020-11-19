@@ -38,6 +38,8 @@ class Traffic_Simulator():
 
     def initialize(self):
         ''' Initialize the application. '''
+        self.agent.save_models()
+        self.agent.load_models()
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.episode_cnt = 0
@@ -97,11 +99,7 @@ class Traffic_Simulator():
         self.score_history.append(self.score)
         avg_score = np.mean(self.score_history[-100:])
 
-        if avg_score > self.best_score:
-            self.best_score = avg_score
-            #if not load_checkpoint:
-            #    self.agent.save_models()
-            self.agent.save_models()
+        self.agent.save_models()
         
         print('episode ', self.episode_cnt, 'score %.1f' % self.score, 'avg_score %.1f' % avg_score)
 

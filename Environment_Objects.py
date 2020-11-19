@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import enum
-from typing import List
+from typing import List 
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
@@ -56,8 +56,21 @@ class Road():
 
         self.cars = []
         self.car_count_minute = []
+        self.car_density = []
+        self.car_speed = []
+
+        for i in range(300):
+            self.car_count_minute.append(0)
+            self.car_density.append(0)
+            self.car_speed.append(0)
         self.flow_per_sec = []
         self.trafficflow = 0
+        self.trafficflow_in_minute = 0
+        self.trafficflow_in_two_minute = 0
+        self.trafficflow_in_five_minute = 0
+        self.density_per_one_minute = 0
+        self.density_per_two_minute = 0
+        self.density_per_five_minute=  0
         self.car_tot_count = 0
         
         self.graphicsItem = None
@@ -105,13 +118,72 @@ class Road():
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
-            if len(self.car_count_minute) > 60:
+            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH)
+            self.car_speed.append(self.speed())
+            if len(self.car_count_minute) > 300:
                 self.car_count_minute.pop(0)
+                self.car_density.pop(0)
+                self.car_speed.pop(0)
 
-    def get_car_density(self):
+    def speed(self):
+        self.speedsum = 0
+        for car in self.cars:
+            self.speedsum += car.prev_speed
+        if len(self.cars) == 0:
+            mspeed = 0
+        else:
+            mspeed = self.speedsum/len(self.cars)
+        return mspeed
+
+    def get_car_density(self, minute):
+        den = 0
+        for i in range((5-minute)*60, 5*60):
+            den += self.car_density[i]
+        return den/minute
+
+    def get_mean_speed(self, minute):
+        speed = 0
+        for i in range((5-minute)*60, 5*60):
+            speed += self.car_speed[i]
+        return speed/(minute*60)
+
+    def get_trafficflow(self, minute):
+        countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
+        return countsum/minute
+
+        
+    def initialize(self):
+        self.cars.clear()
+
+    def isAvailable(self):
+        if len(self.cars) >= 1:
+            if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
+                return False
+        return True
+'''    def get_car_density(self):
         den = len(self.cars)/self.len*ROAD_WIDTH
+        #print("org", den)
+        #print("five", self.get_trafficflow_in_five_minute()/self.len*ROAD_WIDTH)
         return den
 
+    def get_car_density_per_one_minute(self):
+        den = 0
+        for i in range(300, 240):
+            den += self.car_density[i]
+        return den
+    
+    def get_car_density_per_two_minute(self):
+        den = 0
+        for i in range(300, 180):
+            den += self.car_density[i]
+        return den/2
+    
+    def get_car_density_per_five_minute(self):
+        den = 0
+        for i in range(300, 0):
+            den += self.car_density[i]
+        return den/5
+    
     def get_mean_speed(self):
         self.speedsum = 0
         for car in self.cars:
@@ -121,18 +193,17 @@ class Road():
         else:
             mspeed = self.speedsum/len(self.cars)
         return mspeed
-    
-    def get_trafficflow(self):
-        return self.trafficflow
 
-    def initialize(self):
-        self.cars.clear()
+    def get_trafficflow_in_minute(self):
+        return self.trafficflow_in_minute
 
-    def isAvailable(self):
-        if len(self.cars) >= 1:
-            if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
-                return False
-        return True
+    def get_trafficflow_in_two_minute(self):
+        return self.trafficflow_in_two_minute
+
+    def get_trafficflow_in_five_minute(self):
+        return self.trafficflow_in_five_minute'''
+
+
 
 
 class Path():
@@ -223,6 +294,7 @@ class Car():
             self.in_intersection = True
             self.progress = 0
             self.road.cars.remove(self)
+        
             self.stage += 1
             if self.stage >= self.tot_stages:
                 self.leave()
@@ -279,6 +351,35 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
+
+    
+    def car_two_timing_delta(self):
+        delta = self.carcountnum2 - self.carcountnum1
+        self.carcountnum1 = self.carcountnum2
+        if len(self.carcount) == 60:
+            del(self.carcount[0])
+            self.carcount.append(delta)
+'''
+    def trafficflow(self, minute):
+        self.minute = minute
+        for i in range(minute*60):
+            countsum += carcount[i]
+        return countsum/minute
+
+    def trafficflow_in_minute(self):
+        for i in range(60):
+            countsum  += carcount[i]
+        return countsum
+
+    def trafficflow_in_two_minute(self):
+        for i in range(120):
+            countsum  += carcount[i]
+        return countsum/2
+
+    def trafficflow_in_five_minute(self):
+        for i in range(300):
+            countsum  += carcount[i]
+        return countsum/5'''
 
     
 
