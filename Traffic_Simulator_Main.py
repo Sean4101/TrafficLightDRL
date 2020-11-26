@@ -36,7 +36,7 @@ class Traffic_Simulator():
 
     def initialize(self):
         ''' Initialize the application. '''
-        self.agent.save_models()
+        #self.agent.save_models()
         self.agent.load_models()
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
