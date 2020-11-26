@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import QApplication
 from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
-from Environment_Objects import Signals
 
 class Traffic_Simulator():
 
@@ -33,7 +32,6 @@ class Traffic_Simulator():
         self.autoStepping = False
         self.max_step = 3600
         self.assignEvents()
-        self.score_history = []
         self.scale()
 
     def initialize(self):
@@ -43,6 +41,10 @@ class Traffic_Simulator():
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.episode_cnt = 0
+        self.score_history = []
+        self.value_loss_history = []
+        self.critic_loss_history = []
+        self.actor_loss_history = []
         self.reset()
         
     def assignEvents(self):
@@ -55,6 +57,7 @@ class Traffic_Simulator():
         self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
         
     def reset(self):
+        self.episode_cnt += 1
         self.env.clearCarItems()
         self.envState = self.env.reset()
         self.env.render()
@@ -64,12 +67,18 @@ class Traffic_Simulator():
         self.renderGroup.scalingSpin.spin.setValue(val)
 
         self.step_cnt = 0
-        self.best_score = 0
         self.score = 0
-        self.episode_cnt += 1
+        self.value_loss = 0
+        self.critic_loss = 0
+        self.actor_loss = 0
+        self.value_loss_cnt = 0
+        self.critic_loss_cnt = 0
+        self.actor_loss_cnt = 0
+
         self.update_episode_cnt()
         self.update_step_cnt()
         self.update_timer()
+
 
     def envStep(self):
 
@@ -85,27 +94,38 @@ class Traffic_Simulator():
                 time.sleep(0.01)
             self.update_timer()
         state_, reward, terminal, _ = self.env.getStateAndReward()
-
         self.score += reward
+        
         self.agent.remember(self.envState, action, reward, state_, terminal)
-        self.agent.learn()
+        vloss, closs, aloss = self.agent.learn()
         self.envState = state_
+
+        self.value_loss = (self.value_loss * self.value_loss_cnt + vloss)/(self.value_loss_cnt + 1)
+        self.critic_loss = (self.critic_loss * self.critic_loss_cnt + closs)/(self.critic_loss_cnt + 1)
+        self.actor_loss = (self.actor_loss * self.actor_loss_cnt + aloss)/(self.actor_loss_cnt + 1)
+        self.value_loss_cnt += 1
+        self.critic_loss_cnt += 1
+        self.actor_loss_cnt += 1
+
 
         if self.step_cnt >= self.max_step:
             self.episode_end()
 
-
     def episode_end(self):
+        
         self.score_history.append(self.score)
-        avg_score = np.mean(self.score_history[-100:])
+        self.value_loss_history.append(self.value_loss)
+        self.critic_loss_history.append(self.critic_loss)
+        self.actor_loss_history.append(self.actor_loss)
+        episode_avg_waiting_time = self.env.avg_waiting_time
 
         self.agent.save_models()
         
-        print('episode ', self.episode_cnt, 'score %.1f' % self.score, 'avg_score %.1f' % avg_score)
+        print('episode ', self.episode_cnt, 'avg waiting time %.2f' % self.env.avg_waiting_time)
 
-        cnt_list = list(range(1, len(self.score_history)+1))
+        cnt_list = list(range(1, self.episode_cnt+1))
         self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
+        self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'r')
 
         self.view.plot.canvas.draw()
         

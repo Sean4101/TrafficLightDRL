@@ -7,6 +7,7 @@ UPDATE_DUR = 0.1
 RENDER_DUR = 1
 RL_UPDATE_DUR = 2
 
+STATE_EACH_ROAD = 6
 PENALTY = 1000
 
 class Traffic_Simulator_Env():
@@ -36,6 +37,8 @@ class Traffic_Simulator_Env():
 
         self.cars = []
         self.penalty = 0
+        self.avg_waiting_time = 0
+        self.tot_car_cnt = 0
         return self.calculateState()
 
     def buildEnv(self):
@@ -87,7 +90,7 @@ class Traffic_Simulator_Env():
         self.n_action = (len(self.master_signals)* 2)
         self.action_high = 120
         self.action_low = 12
-        self.n_state = len(self.roads)* 3 + len(self.master_signals)
+        self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.master_signals)
         self.observation_space_shape = (self.n_state,)
 
     def toggleRender(self, enable, view):
@@ -154,6 +157,8 @@ class Traffic_Simulator_Env():
         for index, car in enumerate(self.cars):
             car.update()
             if car.done:
+                self.avg_waiting_time = (self.avg_waiting_time*self.tot_car_cnt + car.end_time)/(self.tot_car_cnt+1)
+                self.tot_car_cnt += 1
                 self.cars.pop(index)
         for sig in self.signals:
             sig.update()
@@ -184,11 +189,14 @@ class Traffic_Simulator_Env():
         state = np.zeros((self.n_state), dtype=float)
         for key in self.roads:
             road = self.roads[key]
+            state[road.number+ 0] = road.get_car_density(1)
+            state[road.number+ 1] = road.get_mean_speed(1)
+            state[road.number+ 2] = road.get_trafficflow(1)
             state[road.number+ 0] = road.get_car_density(5)
             state[road.number+ 1] = road.get_mean_speed(5)
             state[road.number+ 2] = road.get_trafficflow(5)
         for idx, sig in enumerate(self.master_signals):
-            state[len(self.roads)* 3+idx] = sig.get_next_green_time()
+            state[len(self.roads)* STATE_EACH_ROAD +idx] = sig.get_next_green_time()
         return state
 
     def calculateReward(self):
