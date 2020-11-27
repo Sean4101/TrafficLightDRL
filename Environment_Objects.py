@@ -160,51 +160,6 @@ class Road():
             if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
                 return False
         return True
-'''    def get_car_density(self):
-        den = len(self.cars)/self.len*ROAD_WIDTH
-        #print("org", den)
-        #print("five", self.get_trafficflow_in_five_minute()/self.len*ROAD_WIDTH)
-        return den
-
-    def get_car_density_per_one_minute(self):
-        den = 0
-        for i in range(300, 240):
-            den += self.car_density[i]
-        return den
-    
-    def get_car_density_per_two_minute(self):
-        den = 0
-        for i in range(300, 180):
-            den += self.car_density[i]
-        return den/2
-    
-    def get_car_density_per_five_minute(self):
-        den = 0
-        for i in range(300, 0):
-            den += self.car_density[i]
-        return den/5
-    
-    def get_mean_speed(self):
-        self.speedsum = 0
-        for car in self.cars:
-            self.speedsum += car.prev_speed
-        if len(self.cars) <= 0:
-            mspeed = 0
-        else:
-            mspeed = self.speedsum/len(self.cars)
-        return mspeed
-
-    def get_trafficflow_in_minute(self):
-        return self.trafficflow_in_minute
-
-    def get_trafficflow_in_two_minute(self):
-        return self.trafficflow_in_two_minute
-
-    def get_trafficflow_in_five_minute(self):
-        return self.trafficflow_in_five_minute'''
-
-
-
 
 class Path():
     ''' Add a new path that cars follow.
@@ -280,7 +235,7 @@ class Car():
     
     def leave(self):
         self.end_time = self.env.timer
-        dt = self.end_time - self.start_time
+        self.end_time = self.end_time - self.start_time
         self.done = True
         if self.view != None and self.graphicsItem != None:
             self.view.scene.removeItem(self.graphicsItem)
