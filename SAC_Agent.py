@@ -5,16 +5,18 @@ import numpy as np
 from SAC_Objects import ActorNetwork, CriticNetwork, ValueNetwork, ReplayBuffer
 
 class Agent():
-    def __init__(self, alpha=1e-6, beta=1e-6, input_dims=[8],
+    def __init__(self, alpha=1e-6, beta=1e-8, input_dims=[8],
             env=None, gamma=1-1e-7, n_actions=2, max_size=1000000, tau=0.005,
             layer1_size=256, layer2_size=256, batch_size=32, reward_scale=1,
-            chkpt_dir='C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/tmp/sac'):
+            chkpt_dir=os.path.dirname(os.path.realpath(__file__))+'/tmp/sac/'):
         self.gamma = gamma
         self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.n_actions = n_actions
         self.chkpt_dir = chkpt_dir
+
+        self.critic_list = []
 
 
         self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
@@ -122,6 +124,7 @@ class Agent():
         critic_2_loss = 0.5 * F.mse_loss(q2_old_policy, q_hat)
 
         critic_loss = critic_1_loss + critic_2_loss
+        self.critic_list.append(critic_loss)
         critic_loss.backward()
         self.critic_1.optimizer.step()
         self.critic_2.optimizer.step()

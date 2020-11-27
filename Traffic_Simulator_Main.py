@@ -9,6 +9,12 @@ from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
 
+#import Draw_Plot 
+
+
+
+
+
 class Traffic_Simulator():
 
     def __init__(self):
@@ -20,13 +26,16 @@ class Traffic_Simulator():
         self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
                                             # also render the environment. 
 
+        #self.plot = Draw_Plot
+
         self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action)
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.trainGroup = self.widget.trainGroup
-        self.paramGroup = self.widget.paramGroup
+        #self.paramGroup = self.widget.paramGroup
         self.renderGroup = self.widget.renderGroup
+        self.plotGroup = self.widget.plotGroup
 
         # Settings
         self.autoStepping = False
@@ -36,12 +45,13 @@ class Traffic_Simulator():
 
     def initialize(self):
         ''' Initialize the application. '''
-        #self.agent.save_models()
+        self.agent.save_models()
         self.agent.load_models()
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.episode_cnt = 0
         self.score_history = []
+        self.avg_wait_time_history = []
         self.value_loss_history = []
         self.critic_loss_history = []
         self.actor_loss_history = []
@@ -55,6 +65,64 @@ class Traffic_Simulator():
          
         self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
         self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
+
+        self.plotGroup.scoreButton.clicked.connect(self.Score_Plot)
+        self.plotGroup.waittimeButton.clicked.connect(self.Wait_time_Plot)
+        self.plotGroup.actorButton.clicked.connect(self.Actor_Loss)
+        self.plotGroup.criticButton.clicked.connect(self.Critic_Loss)
+        self.plotGroup.valueButton.clicked.connect(self.Value_Loss)
+
+    def Score_Plot(self, view):
+        cnt_list = list(range(1, len(self.score_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
+        self.view.plot.ax.set_title('Score Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Score')
+
+        self.view.plot.canvas.draw()
+
+    def Wait_time_Plot(self):
+        cnt_list = list(range(1, len(self.avg_wait_time_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.avg_wait_time_history, 'orange')
+        self.view.plot.ax.set_title('Avg Waiting Time Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Avg Waiting Time')
+
+        self.view.plot.canvas.draw()
+
+    def Actor_Loss(self):
+        cnt_list = list(range(1, len(self.actor_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.actor_loss_history, 'y')
+        self.view.plot.ax.set_title('Actor Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Actor Loss')
+        
+
+        self.view.plot.canvas.draw()
+
+    def Critic_Loss(self):
+        cnt_list = list(range(1, len(self.critic_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.critic_loss_history, 'g')
+        self.view.plot.ax.set_title('Critic Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Critic Loss')
+
+        self.view.plot.canvas.draw()
+        
+
+    def Value_Loss(self):
+        cnt_list = list(range(1, len(self.value_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'b')
+        self.view.plot.ax.set_title('Value Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Value Loss')
+
+        self.view.plot.canvas.draw()
         
     def reset(self):
         self.episode_cnt += 1
@@ -114,20 +182,14 @@ class Traffic_Simulator():
     def episode_end(self):
         
         self.score_history.append(self.score)
+        self.avg_wait_time_history.append(self.env.avg_waiting_time)
         self.value_loss_history.append(self.value_loss)
         self.critic_loss_history.append(self.critic_loss)
         self.actor_loss_history.append(self.actor_loss)
-        episode_avg_waiting_time = self.env.avg_waiting_time
 
         self.agent.save_models()
         
         print('episode ', self.episode_cnt, 'avg waiting time %.2f' % self.env.avg_waiting_time)
-
-        cnt_list = list(range(1, self.episode_cnt+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'r')
-
-        self.view.plot.canvas.draw()
         
         self.reset()
         self.autoStep()
@@ -171,7 +233,7 @@ class Traffic_Simulator():
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    
     # This will create a Traffic_Simulator object. It contains a widget
     # object which creates a GUI window, and a environment object which
     # creates and calculates what happen in the simulated traffic system.
