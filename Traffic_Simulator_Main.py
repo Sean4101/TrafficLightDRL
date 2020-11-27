@@ -9,12 +9,6 @@ from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
 
-#import Draw_Plot 
-
-
-
-
-
 class Traffic_Simulator():
 
     def __init__(self):
@@ -25,26 +19,24 @@ class Traffic_Simulator():
 
         self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
                                             # also render the environment. 
-
-        #self.plot = Draw_Plot
-
+        
         self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action)
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.trainGroup = self.widget.trainGroup
-        #self.paramGroup = self.widget.paramGroup
         self.renderGroup = self.widget.renderGroup
         self.plotGroup = self.widget.plotGroup
 
         # Settings
         self.autoStepping = False
-        self.max_step = 3600
+        self.max_step = 1800
         self.assignEvents()
         self.scale()
 
     def initialize(self):
         ''' Initialize the application. '''
+
         self.agent.save_models()
         self.agent.load_models()
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
@@ -59,6 +51,7 @@ class Traffic_Simulator():
         
     def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
+
         self.trainGroup.stepButton.clicked.connect(self.envStep)
         self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
         self.trainGroup.resetButton.clicked.connect(self.reset)
@@ -73,6 +66,7 @@ class Traffic_Simulator():
         self.plotGroup.valueButton.clicked.connect(self.Value_Loss)
 
     def Score_Plot(self, view):
+
         cnt_list = list(range(1, len(self.score_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
@@ -80,6 +74,7 @@ class Traffic_Simulator():
         self.view.plot.canvas.draw()
 
     def Wait_time_Plot(self):
+
         cnt_list = list(range(1, len(self.avg_wait_time_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.avg_wait_time_history, 'orange')
@@ -87,20 +82,22 @@ class Traffic_Simulator():
         self.view.plot.canvas.draw()
 
     def Actor_Loss(self):
+
         cnt_list = list(range(1, len(self.actor_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.actor_loss_history, 'y')
         self.view.plot.canvas.draw()
 
     def Critic_Loss(self):
+
         cnt_list = list(range(1, len(self.critic_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.critic_loss_history, 'g')
 
         self.view.plot.canvas.draw()
-        
 
     def Value_Loss(self):
+
         cnt_list = list(range(1, len(self.value_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'b')
@@ -108,6 +105,7 @@ class Traffic_Simulator():
         self.view.plot.canvas.draw()
         
     def reset(self):
+
         self.episode_cnt += 1
         self.env.clearCarItems()
         self.envState = self.env.reset()
@@ -129,7 +127,6 @@ class Traffic_Simulator():
         self.update_episode_cnt()
         self.update_step_cnt()
         self.update_timer()
-
 
     def envStep(self):
 
@@ -184,14 +181,17 @@ class Traffic_Simulator():
             self.envStep()
 
     def scale(self):
+
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.env.render()
 
     def renderCheck(self):
+
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.render()
 
     def update_timer(self):
+
         secs = int(self.env.timer)
         mins = int(secs / 60)
         secs %= 60
@@ -209,12 +209,15 @@ class Traffic_Simulator():
         self.widget.trainGroup.timer_label.setText(timer)
 
     def update_step_cnt(self):
+
         self.widget.trainGroup.step_label.setText("steps: "+str(self.step_cnt))
 
     def update_episode_cnt(self):
+
         self.widget.trainGroup.episode_label.setText("episodes: "+str(self.episode_cnt))
 
 if __name__ == '__main__':
+
     app = QApplication(sys.argv)
     
     # This will create a Traffic_Simulator object. It contains a widget

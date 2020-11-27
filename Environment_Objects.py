@@ -17,6 +17,7 @@ SAFE_DIST = 7
 
 class Intersection():
     def __init__(self, name : str, xpos : float, ypos : float, diam : float):
+
         self.name = name
         self.x = xpos
         self.y = ypos
@@ -40,6 +41,7 @@ class Intersection():
 
 class Road():
     def __init__(self, env, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+
         self.env = env
         self.name = name
         self.number = -1
@@ -76,6 +78,7 @@ class Road():
         self.graphicsItem = None
 
     def render(self, view, scale):
+
         self.view = view
         x1 = self.startx * scale
         y1 = self.starty * scale
@@ -96,6 +99,7 @@ class Road():
         self.graphicsItem.setRotation(self.rotd)
     
     def calculate_cords(self):
+
         fx, fy = self.from_.x, self.from_.y
         tx, ty = self.to.x, self.to.y
         dx, dy = tx-fx, ty-fy
@@ -111,10 +115,12 @@ class Road():
         self.rotd = np.angle(vec, deg=True)
 
     def car_enter(self, car):
+
         self.cars.append(car)
         self.car_tot_count += 1
 
     def update(self):
+
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
@@ -126,6 +132,7 @@ class Road():
                 self.car_speed.pop(0)
 
     def speed(self):
+
         self.speedsum = 0
         for car in self.cars:
             self.speedsum += car.prev_speed
@@ -136,18 +143,21 @@ class Road():
         return mspeed
 
     def get_car_density(self, minute):
+
         den = 0
         for i in range((5-minute)*60, 5*60):
             den += self.car_density[i]
         return den/minute
 
     def get_mean_speed(self, minute):
+
         speed = 0
         for i in range((5-minute)*60, 5*60):
             speed += self.car_speed[i]
         return speed/(minute*60)
 
     def get_trafficflow(self, minute):
+        
         countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
         return countsum/minute
 

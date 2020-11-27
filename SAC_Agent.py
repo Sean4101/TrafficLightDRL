@@ -5,10 +5,10 @@ import numpy as np
 from SAC_Objects import ActorNetwork, CriticNetwork, ValueNetwork, ReplayBuffer
 
 class Agent():
-    def __init__(self, alpha=1e-6, beta=1e-6, input_dims=[8],
+    def __init__(self, alpha=1e-6, beta=1e-10, input_dims=[8],
             env=None, gamma=1-1e-7, n_actions=2, max_size=1000000, tau=0.005,
             layer1_size=256, layer2_size=256, batch_size=32, reward_scale=1,
-            chkpt_dir='C:/Users/ASUS/Anaconda3/envs/MachineLearning/TrafficLightDRL/tmp/sac'):
+            chkpt_dir=os.path.dirname(os.path.realpath(__file__))+'/tmp/sac/'):
         self.gamma = gamma
         self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)

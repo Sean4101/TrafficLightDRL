@@ -23,6 +23,7 @@ CAR_HEIGHT = 3
 
 class mainWidget(QWidget):
     def __init__(self, parent=None):
+
         super (mainWidget, self).__init__(parent)
 
         self.setGeometry(0, 0, 1500, 900)
@@ -34,15 +35,17 @@ class mainWidget(QWidget):
         self.main_UI()
     
     def main_UI(self):
+
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.ViewTab, 0, 0, 5, 1)
-        mainLayout.addWidget(self.trainGroup, 0, 1, 1, 1)
-        mainLayout.addWidget(self.renderGroup, 1, 1, 2, 1)
+        mainLayout.addWidget(self.trainGroup, 0, 1, 2, 1)
+        mainLayout.addWidget(self.renderGroup, 2, 1, 1, 1)
         mainLayout.addWidget(self.plotGroup, 3, 1, 2, 1)
         self.setLayout(mainLayout)
 
 class ViewTab(QTabWidget):
     def __init__(self, parent=None):
+
         super(ViewTab, self).__init__(parent)
 
         self.setGeometry(0, 0, 900, 900)
@@ -68,36 +71,20 @@ class ViewTab(QTabWidget):
         self.Tab2_UI()
 
     def Tab1_UI(self):
+
         layout = QVBoxLayout()
         layout.addWidget(self.envView)
         self.tab1.setLayout(layout)
 
     def Tab2_UI(self):
+
         layout = QVBoxLayout()
         layout.addWidget(self.plot)
         self.tab2.setLayout(layout)
 
-class ParamGroup(QGroupBox):
-    
-    def __init__(self, parent=None):
-        super(ParamGroup, self).__init__(parent)
-
-        self.setGeometry(0, 0, 600, 900)
-        self.setTitle("Parameters")
-        self.actorlrSpin = spinBlock("Actor Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
-        self.criticlrSpin = spinBlock("Critic Learning Rate", 0, 1, double=True, step=0.001, Decimals=3)
-        self.gammaSpin = spinBlock("Gamma (Reward Discount)", 0, 1, double=True, step=0.001, Decimals=3)
-        
-        layout = QGridLayout()
-        layout.addWidget(self.actorlrSpin,0,0,1,1)
-        layout.addWidget(self.criticlrSpin,1,0,1,1)
-        layout.addWidget(self.gammaSpin,2,0,1,1)
-
-        self.setLayout(layout)
-
 class TrainGroup(QGroupBox):
-
     def __init__(self, parent=None):
+
         super(TrainGroup, self).__init__(parent)
 
         self.setTitle("Train Options")
@@ -108,7 +95,6 @@ class TrainGroup(QGroupBox):
         self.stepButton = QPushButton("1 Step")
         self.autoStepButton = QPushButton("Auto Step")
         self.delayCheckBox = QCheckBox("Delay")
-        self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
 
         layout.addWidget(self.episode_label, 0, 0, 1, 1)
@@ -123,6 +109,7 @@ class TrainGroup(QGroupBox):
  
 class RenderGroup(QGroupBox):
     def __init__(self, parent=None):
+
         super(RenderGroup, self).__init__(parent)
 
         self.setTitle("Render Options")
@@ -131,7 +118,7 @@ class RenderGroup(QGroupBox):
 
         self.renderCheckBox = QCheckBox("Render")
         self.renderCheckBox.setChecked(True)
-        self.scalingSpin = spinBlock("scaling", 1, 10, double=True, step=0.1, Decimals=1)
+        self.scalingSpin = spinBlock("Scaling", 1, 10, double=True, step=0.1, Decimals=1)
 
         layout.addWidget(self.renderCheckBox, 1, 0, 1, 1)
         layout.addWidget(self.scalingSpin, 2, 0, 1, 1)
@@ -140,17 +127,17 @@ class RenderGroup(QGroupBox):
     
 class PlotGroup(QGroupBox):
     def __init__(self, parent=None):
+        
         super(PlotGroup, self).__init__(parent)
         
         self.view = ViewTab()
         self.setTitle("Plot Options")
 
-        self.scoreButton = QPushButton("score plot")
-        self.waittimeButton = QPushButton("wait time plot")
-        self.actorButton = QPushButton("actor plot")
-        self.criticButton = QPushButton("critic plot")
-        self.valueButton = QPushButton("value plot")
-        
+        self.scoreButton = QPushButton("Score")
+        self.waittimeButton = QPushButton("Average Waiting Time")
+        self.actorButton = QPushButton("Actor Loss")
+        self.criticButton = QPushButton("Critic Loss")
+        self.valueButton = QPushButton("Value Loss")
         
         layout = QGridLayout()
         layout.addWidget(self.scoreButton, 0, 0, 1, 1)
@@ -160,14 +147,9 @@ class PlotGroup(QGroupBox):
         layout.addWidget(self.valueButton, 4, 0, 1, 1)
         self.setLayout(layout)
 
-    
-        
-        
-
-
 class outputPlotSize(QWidget):
-
 	def __init__(self, fontsize, parent=None):
+
 		super(outputPlotSize, self).__init__(parent)
 		self.figure = Figure(figsize=(6,3))
 		self.canvas = FigureCanvas(self.figure)
@@ -181,8 +163,8 @@ class outputPlotSize(QWidget):
 		self.ax = self.figure.add_subplot(111)
 
 class spinBlock(QGroupBox):
-    
 	def __init__(self, title, minValue, maxValue, double = False, step = 1, Decimals = 2, parent=None):
+
 		super(spinBlock, self).__init__(parent)
 		if (double):
 			self.spin = QDoubleSpinBox()
@@ -200,6 +182,7 @@ class spinBlock(QGroupBox):
 
 
 if  __name__ == "__main__":
+    
     app = QApplication(sys.argv)
     widget = mainWidget()
     widget.show()
