@@ -76,6 +76,9 @@ class Traffic_Simulator():
         cnt_list = list(range(1, len(self.score_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
+        self.view.plot.ax.set_title('Score Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Score')
 
         self.view.plot.canvas.draw()
 
@@ -83,6 +86,9 @@ class Traffic_Simulator():
         cnt_list = list(range(1, len(self.avg_wait_time_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.avg_wait_time_history, 'orange')
+        self.view.plot.ax.set_title('Avg Waiting Time Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Avg Waiting Time')
 
         self.view.plot.canvas.draw()
 
@@ -90,12 +96,20 @@ class Traffic_Simulator():
         cnt_list = list(range(1, len(self.actor_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.actor_loss_history, 'y')
+        self.view.plot.ax.set_title('Actor Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Actor Loss')
+        
+
         self.view.plot.canvas.draw()
 
     def Critic_Loss(self):
         cnt_list = list(range(1, len(self.critic_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.critic_loss_history, 'g')
+        self.view.plot.ax.set_title('Critic Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Critic Loss')
 
         self.view.plot.canvas.draw()
         
@@ -104,6 +118,9 @@ class Traffic_Simulator():
         cnt_list = list(range(1, len(self.value_loss_history)+1))
         self.view.plot.ax.cla()
         self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'b')
+        self.view.plot.ax.set_title('Value Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Value Loss')
 
         self.view.plot.canvas.draw()
         
