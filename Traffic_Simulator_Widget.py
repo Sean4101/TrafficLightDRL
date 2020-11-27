@@ -6,6 +6,7 @@ import numpy as np
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
@@ -27,17 +28,17 @@ class mainWidget(QWidget):
         self.setGeometry(0, 0, 1500, 900)
         self.setWindowTitle(TITLE_TEXT)
         self.ViewTab = ViewTab()
-        self.paramGroup = ParamGroup()
         self.trainGroup = TrainGroup()
         self.renderGroup = RenderGroup()
+        self.plotGroup = PlotGroup()
         self.main_UI()
     
     def main_UI(self):
         mainLayout = QGridLayout()
-        mainLayout.addWidget(self.ViewTab, 0, 0, 4, 1)
-        mainLayout.addWidget(self.paramGroup, 0, 1, 1, 1)
-        mainLayout.addWidget(self.trainGroup, 1, 1, 2, 1)
-        mainLayout.addWidget(self.renderGroup, 3, 1, 1, 1)
+        mainLayout.addWidget(self.ViewTab, 0, 0, 5, 1)
+        mainLayout.addWidget(self.trainGroup, 0, 1, 1, 1)
+        mainLayout.addWidget(self.renderGroup, 1, 1, 2, 1)
+        mainLayout.addWidget(self.plotGroup, 3, 1, 2, 1)
         self.setLayout(mainLayout)
 
 class ViewTab(QTabWidget):
@@ -136,6 +137,31 @@ class RenderGroup(QGroupBox):
         layout.addWidget(self.scalingSpin, 2, 0, 1, 1)
 
         self.setLayout(layout)
+    
+class PlotGroup(QGroupBox):
+    def __init__(self, parent=None):
+        super(PlotGroup, self).__init__(parent)
+        
+        self.view = ViewTab()
+        self.setTitle("Plot Options")
+
+        self.scoreButton = QPushButton("score plot")
+        self.waittimeButton = QPushButton("wait time plot")
+        self.actorButton = QPushButton("actor plot")
+        self.criticButton = QPushButton("critic plot")
+        self.valueButton = QPushButton("value plot")
+        
+        
+        layout = QGridLayout()
+        layout.addWidget(self.scoreButton, 0, 0, 1, 1)
+        layout.addWidget(self.waittimeButton, 1, 0, 1, 1)
+        layout.addWidget(self.actorButton, 2, 0, 1, 1)
+        layout.addWidget(self.criticButton, 3, 0, 1, 1)
+        layout.addWidget(self.valueButton, 4, 0, 1, 1)
+        self.setLayout(layout)
+
+    
+        
         
 
 

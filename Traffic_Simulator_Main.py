@@ -10,6 +10,12 @@ from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
 from Environment_Objects import Signals
 
+#import Draw_Plot 
+
+
+
+
+
 class Traffic_Simulator():
 
     def __init__(self):
@@ -21,13 +27,16 @@ class Traffic_Simulator():
         self.widget = mainWidget()          # A GUI window with buttons and spinboxes for training,
                                             # also render the environment. 
 
+        #self.plot = Draw_Plot
+
         self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action)
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
         self.trainGroup = self.widget.trainGroup
-        self.paramGroup = self.widget.paramGroup
+        #self.paramGroup = self.widget.paramGroup
         self.renderGroup = self.widget.renderGroup
+        self.plotGroup = self.widget.plotGroup
 
         # Settings
         self.autoStepping = False
@@ -53,6 +62,58 @@ class Traffic_Simulator():
          
         self.renderGroup.renderCheckBox.clicked.connect(self.renderCheck)
         self.renderGroup.scalingSpin.spin.valueChanged.connect(self.scale)
+
+        self.plotGroup.scoreButton.clicked.connect(self.Score_Plot)
+        self.plotGroup.waittimeButton.clicked.connect(self.Wait_time_Plot)
+        self.plotGroup.actorButton.clicked.connect(self.Actor_Loss)
+        self.plotGroup.criticButton.clicked.connect(self.Critic_Loss)
+        self.plotGroup.valueButton.clicked.connect(self.Value_Loss)
+
+    def Score_Plot(self, view):
+        print("1")
+        score_history = [5, 44, 6, 220, 189]
+        cnt_list = list(range(1, len(score_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, score_history, 'r')
+
+        self.view.plot.canvas.draw()
+
+    def Wait_time_Plot(self):
+        print("1")
+        wait_time_list = [1, 280, 930, 0, 60]
+        cnt_list = list(range(1, len(wait_time_list)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, wait_time_list, 'orange')
+
+        self.view.plot.canvas.draw()
+
+    def Actor_Loss(self):
+        
+        actor_list = [111, 92, 33, 46, 50]
+        cnt_list = list(range(1, len(actor_list)+1))
+        print(len(actor_list))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, actor_list, 'y')
+        self.view.plot.canvas.draw()
+
+    def Critic_Loss(self):
+        print("1")
+        critic_list = [111, 2, 183, 104, 15]
+        cnt_list = list(range(1, len(critic_list)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, critic_list, 'g')
+
+        self.view.plot.canvas.draw()
+        
+
+    def Value_Loss(self):
+        print("1")
+        value_list = [1, 50, 3, 7, 29]
+        cnt_list = list(range(1, len(value_list)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, value_list, 'b')
+
+        self.view.plot.canvas.draw()
         
     def reset(self):
         self.env.clearCarItems()
@@ -151,7 +212,7 @@ class Traffic_Simulator():
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    
     # This will create a Traffic_Simulator object. It contains a widget
     # object which creates a GUI window, and a environment object which
     # creates and calculates what happen in the simulated traffic system.
