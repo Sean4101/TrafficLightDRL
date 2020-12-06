@@ -136,7 +136,7 @@ class Traffic_Simulator_Env():
 
     def renderNonStatic(self):
         for car in self.cars:
-            car.render(self.view, self.scale)
+            car.render(self.view, self.scale, car)
         for ts in self.signals:
             ts.render(self.view, self.scale)
 

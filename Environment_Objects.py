@@ -2,6 +2,7 @@ import numpy as np
 import math
 import enum
 from typing import List 
+import random
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
@@ -149,7 +150,16 @@ class Road():
 
     def get_trafficflow(self, minute):
         countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
+        self.get_waittime_line
         return countsum/minute
+
+    def get_waittime_line(self):
+        line_long = 0
+        print(1)
+        for car in self.cars:
+            line_long += car.height
+        print(line_long)
+        return line_long
 
         
     def initialize(self):
@@ -171,13 +181,14 @@ class Path():
 
 
 class Car():
-    def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None):
+    def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None, height= 3):
         self.env = env
         self.path = path
         self.road = path.roads[0]
         self.update_dur = update_dur
         self.maxSpd = maxSpd
         self.view = view
+        self.height = height
     
         self.graphicsItem = None
 
@@ -203,6 +214,16 @@ class Car():
         dy = -self.road.endy - self.road.starty
         vec = complex(dx, dy)
         self.rot = np.angle(vec, deg=True)
+        
+        x = random.randint(1,100) 
+        if x >= 1 and x < 10:
+            self.height = 30
+        elif x >= 10 and x < 60:
+            self.height = 20
+        elif x >= 60 and x < 90:
+            self.height = 10
+        elif x >= 91 and x <= 100:
+            self.height = 5
 
     def update(self):
         if self.transit():
@@ -210,23 +231,22 @@ class Car():
         self.relative_safe_dist_drive()
         self.record()
         
-    def render(self, view, scale):
+    def render(self, view, scale, car):
         self.view = view
-
+        #
         x = self.xpos * scale
         y = self.ypos * scale
-        h = CAR_HEIGHT * scale
+        h = self.height * scale
         w = CAR_WIDTH * scale
-
+        color = view.blueBrush
         if self.graphicsItem == None:
-            randColor = np.random.randint(0, 4)
-            if randColor == 0:
+            if car.height == 30:
                 color = view.redBrush
-            elif randColor == 1:
+            elif car.height == 20:
                 color = view.yellowBrush
-            elif randColor == 2:
+            elif car.height == 10:
                 color = view.greenBrush
-            elif randColor == 3:
+            elif car.height == 5:
                 color = view.blueBrush
             self.graphicsItem = self.view.scene.addRect(x-h/2, y-w/2, h, w, view.blackPen, color)
             self.graphicsItem.setRect(0, 0, h, w)
@@ -249,9 +269,9 @@ class Car():
             self.in_intersection = True
             self.progress = 0
             self.road.cars.remove(self)
-        
+            
             self.stage += 1
-            if self.stage >= self.tot_stages:
+            if self.stage >= self.tot_stages :
                 self.leave()
                 return True
             self.road = self.path.roads[self.stage]
@@ -289,11 +309,11 @@ class Car():
         else:
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
-            front_dist = front_car.prev_progress - self.progress
-            spd = front_dist + front_spd * self.update_dur - SAFE_DIST
+            front_dist = front_car.prev_progress - self.progress 
+            spd = front_dist + front_spd * self.update_dur + SAFE_DIST - self.height - front_car.height
             if spd > self.maxSpd:
                 spd = self.maxSpd
-            elif spd < 0:
+            elif spd < self.maxSpd:
                 spd = 0
             self.speed = spd
         self.progress += self.speed * self.update_dur
@@ -305,7 +325,7 @@ class Car():
     
     def record(self):
         self.prev_speed = self.speed
-        self.prev_progress = self.progress
+        self.prev_progress = self.progress + self.height
 
     
     def car_two_timing_delta(self):
