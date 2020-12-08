@@ -11,7 +11,7 @@ TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
 TRAFFIC_SIGNAL_AWAY = 10
 INTERSECTION_DIAM = 20
-ROAD_WIDTH = 12
+ROAD_WIDTH = 50
 
 TRANSIT_TIME = 2
 SAFE_DIST = 7
@@ -40,7 +40,8 @@ class Intersection():
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
-    def __init__(self, env, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+    def __init__(self, env, op : False,name : str,from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+        self.op = op
         self.env = env
         self.name = name
         self.number = -1
@@ -317,9 +318,13 @@ class Car():
                 spd = 0
             self.speed = spd
         self.progress += self.speed * self.update_dur
+        if self.road.op == False:
+            self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len - ROAD_WIDTH/4
+            self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len - ROAD_WIDTH/4
 
-        self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len
-        self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len
+        elif self.road.op == True:
+            self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len + ROAD_WIDTH/4
+            self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len + ROAD_WIDTH/4
 
         self.rot = self.road.rotd
     

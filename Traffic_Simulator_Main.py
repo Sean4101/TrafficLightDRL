@@ -126,7 +126,7 @@ class Traffic_Simulator():
         self.view.plot.canvas.draw()
         
     def reset(self):
-        self.episode_cnt += 1
+        self.episode_cnt = 0
         self.env.clearCarItems()
         self.envState = self.env.reset()
         self.env.render()
@@ -147,6 +147,7 @@ class Traffic_Simulator():
         self.update_episode_cnt()
         self.update_step_cnt()
         self.update_timer()
+        self.view
 
 
     def envStep(self):
@@ -203,6 +204,8 @@ class Traffic_Simulator():
 
     def scale(self):
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.toggleRender(False, self.view)
+        self.env.toggleRender(True, self.view)
         self.env.render()
 
     def renderCheck(self):

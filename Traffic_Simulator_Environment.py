@@ -69,23 +69,41 @@ class Traffic_Simulator_Env():
         d2 = self.addIntersection("d2", 200, 600)
         d3 = self.addIntersection("d3", 400, 600)
 
-        a2b2 = self.addRoad(a2, b2, sig1)
-        b2c2 = self.addRoad(b2, c2, sig5)
-        c2d2 = self.addRoad(c2, d2)
-        a3b3 = self.addRoad(a3, b3, sig3)
-        b3c3 = self.addRoad(b3, c3, sig7)
-        c3d3 = self.addRoad(c3, d3)
-        b1b2 = self.addRoad(b1, b2, sig2)
-        b2b3 = self.addRoad(b2, b3, sig4)
-        b3b4 = self.addRoad(b3, b4)
-        c1c2 = self.addRoad(c1, c2, sig6)
-        c2c3 = self.addRoad(c2, c3, sig8)
-        c3c4 = self.addRoad(c3, c4)
+        a2b2 = self.addRoad(False, a2, b2, sig1)
+        b2c2 = self.addRoad(False, b2, c2, sig5)
+        c2d2 = self.addRoad(False, c2, d2)
+        a3b3 = self.addRoad(False, a3, b3, sig3)
+        b3c3 = self.addRoad(False, b3, c3, sig7)
+        c3d3 = self.addRoad(False, c3, d3)
+        b1b2 = self.addRoad(False, b1, b2, sig2)
+        b2b3 = self.addRoad(False, b2, b3, sig4)
+        b3b4 = self.addRoad(False, b3, b4)
+        c1c2 = self.addRoad(False, c1, c2, sig6)
+        c2c3 = self.addRoad(False, c2, c3, sig8)
+        c3c4 = self.addRoad(False, c3, c4)
+
+        b2a2 = self.addRoad(True, b2, a2, sig1)
+        c2b2 = self.addRoad(True, c2, b2, sig5)
+        d2c2 = self.addRoad(True, d2, c2)
+        b3a3 = self.addRoad(True, b3, a3, sig3)
+        c3b3 = self.addRoad(True, c3, b3, sig7)
+        d3c3 = self.addRoad(True, d3, c3)
+        b2b1 = self.addRoad(True, b2, b1, sig2)
+        b3b2 = self.addRoad(True, b3, b2, sig4)
+        b4b3 = self.addRoad(True, b4, b3)
+        c2c1 = self.addRoad(True, c2, c1, sig6)
+        c3c2 = self.addRoad(True, c3, c2, sig8)
+        c4c3 = self.addRoad(True, c4, c3)
 
         p1 = self.addPath([a2b2, b2c2, c2d2], 10)
         p2 = self.addPath([a3b3, b3c3, c3d3], 10)
         p3 = self.addPath([b1b2, b2b3, b3b4], 10)
         p4 = self.addPath([c1c2, c2c3, c3c4], 10)
+
+        p1 = self.addPath([d2c2, c2b2, b2a2], 10)
+        p2 = self.addPath([d3c3, c3b3, b3a3], 10)
+        p3 = self.addPath([b3b4, b3b2, b2b1], 10)
+        p4 = self.addPath([c4c3, c3c2, c2c1], 10)
         
         self.n_action = (len(self.master_signals)* 2)
         self.action_high = 120
@@ -221,13 +239,14 @@ class Traffic_Simulator_Env():
         self.intersections[add.name] = add
         return add
 
-    def addRoad(self, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
-        name = start.name+"-"+end.name
+    def addRoad(self, op : False, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
+        self.op = op
+        name1 = start.name+"-"+end.name
         lim = spdLim/3600*1000
-        add = Road(self, name, start, end, lim, traffic_signal=traffic_signal)
-        add.number = len(self.roads)
-        self.roads[add.name] = add
-        return add
+        add1 = Road(self, self.op, name1, start, end, lim, traffic_signal=traffic_signal)
+        add1.number = len(self.roads)
+        self.roads[add1.name] = add1
+        return add1
 
     def addPath(self, roads : List[Road], current : float):
         name = roads[0].name
