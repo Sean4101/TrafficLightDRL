@@ -15,8 +15,7 @@ class CriticNetwork(nn.Module):
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.name = name
-        self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.change_dir(chkpt_dir)
 
         self.fc1 = nn.Linear(self.input_dims[0]+n_actions, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -26,6 +25,10 @@ class CriticNetwork(nn.Module):
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
         self.to(self.device)
+        
+    def change_dir(self, chkpt_dir):
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name+'_sac')
 
     def forward(self, state, action):
         action_value = self.fc1(T.cat([state, action], dim=1))
@@ -51,8 +54,7 @@ class ValueNetwork(nn.Module):
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.name = name
-        self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.change_dir(chkpt_dir)
 
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, fc2_dims)
@@ -62,6 +64,10 @@ class ValueNetwork(nn.Module):
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
         self.to(self.device)
+
+    def change_dir(self, chkpt_dir):
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name+'_sac')
 
     def forward(self, state):
         state_value = self.fc1(state)
@@ -88,8 +94,7 @@ class ActorNetwork(nn.Module):
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.name = name
-        self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name+'_sac')
+        self.change_dir(chkpt_dir=chkpt_dir)
         self.max_action = max_action
         self.min_action = min_action
         self.scale = (max_action - min_action)/2
@@ -104,6 +109,10 @@ class ActorNetwork(nn.Module):
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
         self.to(self.device)
+
+    def change_dir(self, chkpt_dir):
+        self.checkpoint_dir = chkpt_dir
+        self.checkpoint_file = os.path.join(self.checkpoint_dir, self.name+'_sac')
 
     def forward(self, state):
         prob = self.fc1(state)

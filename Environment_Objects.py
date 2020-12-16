@@ -24,7 +24,6 @@ class Intersection():
 
         self.cars = []
 
-
         self.graphicsItem = None
 
     def render(self, view, scale):
