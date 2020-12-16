@@ -36,9 +36,9 @@ class mainWidget(QWidget):
     def main_UI(self):
         mainLayout = QGridLayout()
         mainLayout.addWidget(self.ViewTab, 0, 0, 5, 1)
-        mainLayout.addWidget(self.trainGroup, 0, 1, 1, 1)
-        mainLayout.addWidget(self.renderGroup, 1, 1, 2, 1)
-        mainLayout.addWidget(self.plotGroup, 3, 1, 2, 1)
+        mainLayout.addWidget(self.trainGroup, 0, 1, 2, 2)
+        mainLayout.addWidget(self.renderGroup, 2, 1, 1, 2)
+        mainLayout.addWidget(self.plotGroup, 3, 1, 2, 2)
         self.setLayout(mainLayout)
 
 class ViewTab(QTabWidget):
@@ -77,7 +77,7 @@ class ViewTab(QTabWidget):
         layout.addWidget(self.plot)
         self.tab2.setLayout(layout)
 
-class ParamGroup(QGroupBox):
+class ParamGroup(QGroupBox):  ### Unused
     
     def __init__(self, parent=None):
         super(ParamGroup, self).__init__(parent)
@@ -101,6 +101,10 @@ class TrainGroup(QGroupBox):
         super(TrainGroup, self).__init__(parent)
 
         self.setTitle("Train Options")
+        self.file_name_label = QLabel("File Name: ")
+        self.file_name_line = QLineEdit("")
+        self.save_button = QPushButton("Save Model")
+        self.load_button = QPushButton("Load Model")
         self.episode_label = QLabel("Episode: 0")
         self.step_label = QLabel("Steps: 0")
         self.timer_label = QLabel("Timer: 0:00:00")
@@ -111,13 +115,17 @@ class TrainGroup(QGroupBox):
         self.delayCheckBox.setChecked(True)
         layout = QGridLayout()
 
-        layout.addWidget(self.episode_label, 0, 0, 1, 1)
-        layout.addWidget(self.step_label, 1, 0, 1, 1)
-        layout.addWidget(self.timer_label, 2, 0, 1, 1)
-        layout.addWidget(self.resetButton, 3, 0, 1, 1)
-        layout.addWidget(self.stepButton, 4, 0, 1, 1)
-        layout.addWidget(self.autoStepButton, 5, 0, 1, 1)
-        layout.addWidget(self.delayCheckBox, 6, 0, 1, 1)
+        layout.addWidget(self.file_name_label,  0, 0, 1, 1)
+        layout.addWidget(self.file_name_line,   0, 1, 1, 1)
+        layout.addWidget(self.save_button,      1, 0, 1, 1)
+        layout.addWidget(self.load_button,      1, 1, 1, 1)
+        layout.addWidget(self.episode_label,    2, 0, 1, 2)
+        layout.addWidget(self.step_label,       3, 0, 1, 2)
+        layout.addWidget(self.timer_label,      4, 0, 1, 2)
+        layout.addWidget(self.resetButton,      5, 0, 1, 2)
+        layout.addWidget(self.stepButton,       6, 0, 1, 2)
+        layout.addWidget(self.autoStepButton,   7, 0, 1, 2)
+        layout.addWidget(self.delayCheckBox,    8, 0, 1, 2)
 
         self.setLayout(layout)
  

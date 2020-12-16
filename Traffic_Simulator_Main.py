@@ -9,11 +9,8 @@ from Traffic_Simulator_Environment import Traffic_Simulator_Env
 from Traffic_Simulator_Widget import mainWidget
 from SAC_Agent import Agent
 
-#import Draw_Plot 
-
-
-
-
+base_dir_name = os.path.dirname(os.path.realpath(__file__))
+file_folder_name = 'files'
 
 class Traffic_Simulator():
 
@@ -28,7 +25,8 @@ class Traffic_Simulator():
 
         #self.plot = Draw_Plot
 
-        self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action)
+        self.agent = Agent(input_dims=self.env.observation_space_shape, env=self.env, n_actions=self.env.n_action,
+                           chkpt_dir=os.path.join(os.path.dirname(os.path.realpath(__file__)), file_folder_name))
 
         # Reference the groups in widget
         self.view = self.widget.ViewTab
@@ -45,8 +43,6 @@ class Traffic_Simulator():
 
     def initialize(self):
         ''' Initialize the application. '''
-        self.agent.save_models()
-        self.agent.load_models()
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
         self.episode_cnt = 0
@@ -59,6 +55,8 @@ class Traffic_Simulator():
         
     def assignEvents(self):
         ''' Assign every buttons in widget to a method '''
+        self.trainGroup.save_button.clicked.connect(self.save_files)
+        self.trainGroup.load_button.clicked.connect(self.load_files)
         self.trainGroup.stepButton.clicked.connect(self.envStep)
         self.trainGroup.autoStepButton.clicked.connect(self.autoStep)
         self.trainGroup.resetButton.clicked.connect(self.reset)
@@ -72,58 +70,26 @@ class Traffic_Simulator():
         self.plotGroup.criticButton.clicked.connect(self.Critic_Loss)
         self.plotGroup.valueButton.clicked.connect(self.Value_Loss)
 
-    def Score_Plot(self, view):
-        cnt_list = list(range(1, len(self.score_history)+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
-        self.view.plot.ax.set_title('Score Plot')
-        self.view.plot.ax.set_xlabel('Episode')
-        self.view.plot.ax.set_ylabel('Score')
+    def save_files(self):
+        folder_dir = self.trainGroup.file_name_line.text()
+        if folder_dir != '':
+            directory = os.path.join(base_dir_name, file_folder_name, folder_dir)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+                print("Folder {} created.".format(directory))
+            self.agent.change_dir(folder_dir)
+            self.agent.save_models()
 
-        self.view.plot.canvas.draw()
+    def load_files(self):
+        folder_dir = self.trainGroup.file_name_line.text()
+        if folder_dir != '':
+            directory = os.path.join(base_dir_name, file_folder_name, folder_dir)
+            if not os.path.exists(directory):
+                print("No such directory: {}".format(directory))
+                return
+            self.agent.change_dir(folder_dir)
+            self.agent.load_models()
 
-    def Wait_time_Plot(self):
-        cnt_list = list(range(1, len(self.avg_wait_time_history)+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.avg_wait_time_history, 'orange')
-        self.view.plot.ax.set_title('Avg Waiting Time Plot')
-        self.view.plot.ax.set_xlabel('Episode')
-        self.view.plot.ax.set_ylabel('Avg Waiting Time')
-
-        self.view.plot.canvas.draw()
-
-    def Actor_Loss(self):
-        cnt_list = list(range(1, len(self.actor_loss_history)+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.actor_loss_history, 'y')
-        self.view.plot.ax.set_title('Actor Loss Plot')
-        self.view.plot.ax.set_xlabel('Episode')
-        self.view.plot.ax.set_ylabel('Actor Loss')
-        
-
-        self.view.plot.canvas.draw()
-
-    def Critic_Loss(self):
-        cnt_list = list(range(1, len(self.critic_loss_history)+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.critic_loss_history, 'g')
-        self.view.plot.ax.set_title('Critic Loss Plot')
-        self.view.plot.ax.set_xlabel('Episode')
-        self.view.plot.ax.set_ylabel('Critic Loss')
-
-        self.view.plot.canvas.draw()
-        
-
-    def Value_Loss(self):
-        cnt_list = list(range(1, len(self.value_loss_history)+1))
-        self.view.plot.ax.cla()
-        self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'b')
-        self.view.plot.ax.set_title('Value Loss Plot')
-        self.view.plot.ax.set_xlabel('Episode')
-        self.view.plot.ax.set_ylabel('Value Loss')
-
-        self.view.plot.canvas.draw()
-        
     def reset(self):
         self.episode_cnt += 1
         self.env.clearCarItems()
@@ -147,9 +113,7 @@ class Traffic_Simulator():
         self.update_step_cnt()
         self.update_timer()
 
-
     def envStep(self):
-
         self.step_cnt += 1
         self.update_step_cnt()
         action = self.agent.choose_action(self.envState)
@@ -186,8 +150,6 @@ class Traffic_Simulator():
         self.value_loss_history.append(self.value_loss)
         self.critic_loss_history.append(self.critic_loss)
         self.actor_loss_history.append(self.actor_loss)
-
-        self.agent.save_models()
         
         print('episode ', self.episode_cnt, 'avg waiting time %.2f' % self.env.avg_waiting_time)
         
@@ -207,6 +169,57 @@ class Traffic_Simulator():
     def renderCheck(self):
         self.env.toggleRender(self.renderGroup.renderCheckBox.isChecked(), self.view)
         self.env.render()
+
+    def Score_Plot(self, view):
+        cnt_list = list(range(1, len(self.score_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.score_history, 'r')
+        self.view.plot.ax.set_title('Score Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Score')
+
+        self.view.plot.canvas.draw()
+
+    def Wait_time_Plot(self):
+        cnt_list = list(range(1, len(self.avg_wait_time_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.avg_wait_time_history, 'orange')
+        self.view.plot.ax.set_title('Avg Waiting Time Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Avg Waiting Time')
+
+        self.view.plot.canvas.draw()
+
+    def Actor_Loss(self):
+        cnt_list = list(range(1, len(self.actor_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.actor_loss_history, 'y')
+        self.view.plot.ax.set_title('Actor Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Actor Loss')
+
+        self.view.plot.canvas.draw()
+
+    def Critic_Loss(self):
+        cnt_list = list(range(1, len(self.critic_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.critic_loss_history, 'g')
+        self.view.plot.ax.set_title('Critic Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Critic Loss')
+
+        self.view.plot.canvas.draw()
+
+    def Value_Loss(self):
+        cnt_list = list(range(1, len(self.value_loss_history)+1))
+        self.view.plot.ax.cla()
+        self.view.plot.ax.plot(cnt_list, self.value_loss_history, 'b')
+        self.view.plot.ax.set_title('Value Loss Plot')
+        self.view.plot.ax.set_xlabel('Episode')
+        self.view.plot.ax.set_ylabel('Value Loss')
+
+        self.view.plot.canvas.draw()
+        
 
     def update_timer(self):
         secs = int(self.env.timer)
