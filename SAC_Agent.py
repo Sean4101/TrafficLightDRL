@@ -4,29 +4,31 @@ import torch.nn.functional as F
 import numpy as np
 from SAC_Objects import ActorNetwork, CriticNetwork, ValueNetwork, ReplayBuffer
 
+default_folder_dir = '/tmp/sac/'
+
 class Agent():
     def __init__(self, alpha=1e-6, beta=1e-8, input_dims=[8],
             env=None, gamma=1-1e-7, n_actions=2, max_size=1000000, tau=0.005,
             layer1_size=256, layer2_size=256, batch_size=32, reward_scale=1,
-            chkpt_dir=os.path.dirname(os.path.realpath(__file__))+'/tmp/sac/'):
+            chkpt_dir=''):
         self.gamma = gamma
         self.tau = tau
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.batch_size = batch_size
         self.n_actions = n_actions
         self.chkpt_dir = chkpt_dir
+        self.folder_dir = default_folder_dir
 
         self.critic_list = []
 
-
         self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
-                    name='actor', min_action=env.action_low, max_action=env.action_high, chkpt_dir=self.chkpt_dir)
+                    name='actor', min_action=env.action_low, max_action=env.action_high, chkpt_dir=self.chkpt_dir+self.folder_dir)
         self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions,
-                    name='critic_1', chkpt_dir=self.chkpt_dir)
+                    name='critic_1', chkpt_dir=self.chkpt_dir+self.folder_dir)
         self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions,
-                    name='critic_2', chkpt_dir=self.chkpt_dir)
-        self.value = ValueNetwork(beta, input_dims, name='value', chkpt_dir=self.chkpt_dir)
-        self.target_value = ValueNetwork(beta, input_dims, name='target_value', chkpt_dir=self.chkpt_dir)
+                    name='critic_2', chkpt_dir=self.chkpt_dir+self.folder_dir)
+        self.value = ValueNetwork(beta, input_dims, name='value', chkpt_dir=self.chkpt_dir+self.folder_dir)
+        self.target_value = ValueNetwork(beta, input_dims, name='target_value', chkpt_dir=self.chkpt_dir+self.folder_dir)
 
         self.scale = reward_scale
         self.update_network_parameters(tau=1)
@@ -55,6 +57,15 @@ class Agent():
                     (1-tau)*target_value_state_dict[name].clone()
 
         self.target_value.load_state_dict(value_state_dict)
+
+    def change_dir(self, new_dir):
+        self.folder_dir = new_dir
+        d = os.path.join(self.chkpt_dir, self.folder_dir)
+        self.actor.change_dir(d)
+        self.value.change_dir(d)
+        self.target_value.change_dir(d)
+        self.critic_1.change_dir(d)
+        self.critic_2.change_dir(d)
 
     def save_models(self):
         print('.... saving models ....')
