@@ -7,11 +7,11 @@ import random
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
 
-TRAFFIC_SIGNAL_DIAM = 5
-TRAFFIC_SIGNAL_DIST = 20
-TRAFFIC_SIGNAL_AWAY = 10
-INTERSECTION_DIAM = 20
 ROAD_WIDTH = 50
+TRAFFIC_SIGNAL_DIAM = 5
+TRAFFIC_SIGNAL_DIST = -50/2 - 10
+TRAFFIC_SIGNAL_AWAY = -50/2 - 10
+INTERSECTION_DIAM = 20
 
 TRANSIT_TIME = 2
 SAFE_DIST = 7
@@ -266,7 +266,7 @@ class Car():
         return curTime - self.start_time
 
     def transit(self):
-        if self.progress >= self.road.len:
+        if self.progress >= self.road.len - self.height - INTERSECTION_DIAM - SAFE_DIST:
             self.in_intersection = True
             self.progress = 0
             self.road.cars.remove(self)
@@ -294,7 +294,7 @@ class Car():
                 if self.road.traffic_signal.signal != Signals.RED:
                     if self.stage < self.tot_stages - 1:
                         if self.path.roads[self.stage+1].isAvailable() == False and \
-                           self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST:
+                           self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST :
                             self.speed = 0
                         else:
                             self.speed = self.maxSpd
@@ -319,12 +319,12 @@ class Car():
             self.speed = spd
         self.progress += self.speed * self.update_dur
         if self.road.op == False:
-            self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len - ROAD_WIDTH/4
-            self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len - ROAD_WIDTH/4
-
-        elif self.road.op == True:
             self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len + ROAD_WIDTH/4
             self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len + ROAD_WIDTH/4
+
+        elif self.road.op == True:
+            self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len - ROAD_WIDTH/4
+            self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len - ROAD_WIDTH/4
 
         self.rot = self.road.rotd
     
@@ -405,8 +405,8 @@ class Traffic_signal():
         mx = x1 + math.cos(rot+math.pi)*TRAFFIC_SIGNAL_DIST
         my = y1 + math.sin(rot+math.pi)*TRAFFIC_SIGNAL_DIST
 
-        x = (mx + math.cos(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
-        y = (my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
+        x = (mx + math.cos(rot+math.pi*3/2)*(TRAFFIC_SIGNAL_AWAY)) * scale
+        y = (my + math.sin(rot+math.pi*3/2)*(TRAFFIC_SIGNAL_AWAY)) * scale
 
         if self.graphicsItem == None:
             self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.blackPen, view.greenBrush)
