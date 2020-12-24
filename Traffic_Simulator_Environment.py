@@ -1,7 +1,8 @@
 import numpy as np
 from typing import List
 
-from Environment_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
+from Environment_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals, Lane
+from Environment_Objects import lane_
 
 UPDATE_DUR = 0.1
 RENDER_DUR = 1
@@ -9,6 +10,8 @@ RL_UPDATE_DUR = 2
 
 STATE_EACH_ROAD = 6
 PENALTY = 1000
+
+lane_ = 3
 
 class Traffic_Simulator_Env():
 
@@ -69,23 +72,41 @@ class Traffic_Simulator_Env():
         d2 = self.addIntersection("d2", 200, 600)
         d3 = self.addIntersection("d3", 400, 600)
 
-        a2b2 = self.addRoad(a2, b2, sig1)
-        b2c2 = self.addRoad(b2, c2, sig5)
-        c2d2 = self.addRoad(c2, d2)
-        a3b3 = self.addRoad(a3, b3, sig3)
-        b3c3 = self.addRoad(b3, c3, sig7)
-        c3d3 = self.addRoad(c3, d3)
-        b1b2 = self.addRoad(b1, b2, sig2)
-        b2b3 = self.addRoad(b2, b3, sig4)
-        b3b4 = self.addRoad(b3, b4)
-        c1c2 = self.addRoad(c1, c2, sig6)
-        c2c3 = self.addRoad(c2, c3, sig8)
-        c3c4 = self.addRoad(c3, c4)
+        a2b2 = self.addRoad(lane_, False, a2, b2, sig1)
+        b2c2 = self.addRoad(lane_, False, b2, c2, sig5)
+        c2d2 = self.addRoad(lane_, False, c2, d2)
+        a3b3 = self.addRoad(lane_, False, a3, b3, sig3)
+        b3c3 = self.addRoad(lane_, False, b3, c3, sig7)
+        c3d3 = self.addRoad(lane_, False, c3, d3)
+        b1b2 = self.addRoad(lane_, False, b1, b2, sig2)
+        b2b3 = self.addRoad(lane_, False, b2, b3, sig4)
+        b3b4 = self.addRoad(lane_, False, b3, b4)
+        c1c2 = self.addRoad(lane_, False, c1, c2, sig6)
+        c2c3 = self.addRoad(lane_, False, c2, c3, sig8)
+        c3c4 = self.addRoad(lane_, False, c3, c4)
+
+        b2a2 = self.addRoad(lane_, True, b2, a2)
+        c2b2 = self.addRoad(lane_, True, c2, b2, sig1)
+        d2c2 = self.addRoad(lane_, True, d2, c2, sig5)
+        b3a3 = self.addRoad(lane_, True, b3, a3)
+        c3b3 = self.addRoad(lane_, True, c3, b3, sig3)
+        d3c3 = self.addRoad(lane_, True, d3, c3, sig7)
+        b2b1 = self.addRoad(lane_, True, b2, b1)
+        b3b2 = self.addRoad(lane_, True, b3, b2, sig2)
+        b4b3 = self.addRoad(lane_, True, b4, b3, sig4)
+        c2c1 = self.addRoad(lane_, True, c2, c1)
+        c3c2 = self.addRoad(lane_, True, c3, c2, sig6)
+        c4c3 = self.addRoad(lane_, True, c4, c3, sig8)
 
         p1 = self.addPath([a2b2, b2c2, c2d2], 10)
         p2 = self.addPath([a3b3, b3c3, c3d3], 10)
         p3 = self.addPath([b1b2, b2b3, b3b4], 10)
         p4 = self.addPath([c1c2, c2c3, c3c4], 10)
+
+        p5 = self.addPath([d2c2, c2b2, b2a2], 10)
+        p6 = self.addPath([d3c3, c3b3, b3a3], 10)
+        p7 = self.addPath([b4b3, b3b2, b2b1], 10)
+        p8 = self.addPath([c4c3, c3c2, c2c1], 10)
         
         self.n_action = (len(self.master_signals)* 2)
         self.action_high = 120
@@ -148,10 +169,15 @@ class Traffic_Simulator_Env():
             rand = np.random.rand()
             prob = path.flow/10/60
             if rand < prob:
-                if path.roads[0].isAvailable():
-                    self.addCar(path)
+                '''if path.roads[0].isAvailable():
+                    self.addCar(bestlane)
                 else:
+                    self.penalty -= PENALTY'''
+                if path.roads[0].isAvailable() != 0:
+                    self.addCar(1, path.roads[0].isAvailable() , path)
+                elif path.roads[0].isAvailable() == 0:
                     self.penalty -= PENALTY
+                
         for key in self.roads:
             self.roads[key].update()
         for index, car in enumerate(self.cars):
@@ -221,10 +247,10 @@ class Traffic_Simulator_Env():
         self.intersections[add.name] = add
         return add
 
-    def addRoad(self, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
+    def addRoad(self, lane : int, op : bool, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
         name = start.name+"-"+end.name
         lim = spdLim/3600*1000
-        add = Road(self, name, start, end, lim, traffic_signal=traffic_signal)
+        add = Road(self, lane_, op, name, start, end, lim, traffic_signal=traffic_signal)
         add.number = len(self.roads)
         self.roads[add.name] = add
         return add
@@ -244,8 +270,8 @@ class Traffic_Simulator_Env():
         self.signals.append(add)
         return add
 
-    def addCar(self, path : Path, maxSpd=20.0):
-        add = Car(self, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
+    def addCar(self, lane : int, next_lane : int, path : Path, maxSpd=20.0):
+        add = Car(self, 1, 1, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
 
