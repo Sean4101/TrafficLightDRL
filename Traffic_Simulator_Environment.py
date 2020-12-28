@@ -2,7 +2,7 @@ import numpy as np
 from typing import List
 
 from Environment_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals, Lane
-from Environment_Objects import lane_
+from Environment_Objects import lane_#, ROAD_LONG
 
 UPDATE_DUR = 0.1
 RENDER_DUR = 1
@@ -11,7 +11,6 @@ RL_UPDATE_DUR = 2
 STATE_EACH_ROAD = 6
 PENALTY = 1000
 
-lane_ = 3
 
 class Traffic_Simulator_Env():
 
@@ -71,6 +70,19 @@ class Traffic_Simulator_Env():
         c4 = self.addIntersection("c4", 600, 400)
         d2 = self.addIntersection("d2", 200, 600)
         d3 = self.addIntersection("d3", 400, 600)
+
+        '''a2 = self.addIntersection("a2", ROAD_LONG, 0)
+        a3 = self.addIntersection("a3", ROAD_LONG * 2, 0)
+        b1 = self.addIntersection("b1", 0, ROAD_LONG)
+        b2 = self.addIntersection("b2", ROAD_LONG, ROAD_LONG)
+        b3 = self.addIntersection("b3", ROAD_LONG * 2, ROAD_LONG)
+        b4 = self.addIntersection("b4", ROAD_LONG * 3, ROAD_LONG)
+        c1 = self.addIntersection("c1", 0, ROAD_LONG * 2)
+        c2 = self.addIntersection("c2", ROAD_LONG, ROAD_LONG * 2)
+        c3 = self.addIntersection("c3", ROAD_LONG * 2, ROAD_LONG * 2)
+        c4 = self.addIntersection("c4", ROAD_LONG * 3, ROAD_LONG * 2)
+        d2 = self.addIntersection("d2", ROAD_LONG, ROAD_LONG * 3)
+        d3 = self.addIntersection("d3", ROAD_LONG * 2, ROAD_LONG * 3)'''
 
         a2b2 = self.addRoad(lane_, False, a2, b2, sig1)
         b2c2 = self.addRoad(lane_, False, b2, c2, sig5)
@@ -271,7 +283,7 @@ class Traffic_Simulator_Env():
         return add
 
     def addCar(self, lane : int, next_lane : int, path : Path, maxSpd=20.0):
-        add = Car(self, 1, 1, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
+        add = Car(self, 1, 1, path, 3, update_dur=UPDATE_DUR, maxSpd=maxSpd, view=self.view)
         self.cars.append(add)
         return add
 

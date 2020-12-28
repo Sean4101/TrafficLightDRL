@@ -202,6 +202,8 @@ class Traffic_Simulator():
 
     def scale(self):
         self.env.scale = self.renderGroup.scalingSpin.spin.value()
+        self.env.toggleRender(False, self.view)
+        self.env.toggleRender(True, self.view)
         self.env.render()
 
     def renderCheck(self):
