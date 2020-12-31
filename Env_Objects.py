@@ -1,7 +1,14 @@
 import numpy as np
 import math
 import enum
+
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+
 from typing import List 
+
+UPDATE_DUR = 0.1
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
@@ -15,9 +22,13 @@ ROAD_WIDTH = 12
 TRANSIT_TIME = 2
 SAFE_DIST = 7
 
+UNDERTIME_PENALTY = 1000
+OVERTIME_PENALTY = 500
+SIGNAL_MIN = 12
+SIGNAL_MAX = 120
+
 class Intersection():
-    def __init__(self, name : str, xpos : float, ypos : float, diam : float):
-        self.name = name
+    def __init__(self, xpos : float, ypos : float, diam : float):
         self.x = xpos
         self.y = ypos
         self.diam = diam
@@ -26,21 +37,20 @@ class Intersection():
 
         self.graphicsItem = None
 
-    def render(self, view, scale):
+    def render(self, scene, scale):
 
         x = self.x * scale
         y = self.y * scale
         diam = self.diam * scale
 
-        self.view = view
+        self.scene = scene
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.grayPen, view.grayBrush)
+            self.graphicsItem = self.scene.addEllipse(0, 0, 0, 0, QPen(Qt.gray), QBrush(Qt.gray))
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
 class Road():
-    def __init__(self, env, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+    def __init__(self, env, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
         self.env = env
-        self.name = name
         self.number = -1
         self.from_ = from_
         self.to = to
@@ -74,8 +84,7 @@ class Road():
         
         self.graphicsItem = None
 
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
         x1 = self.startx * scale
         y1 = self.starty * scale
         x2 = self.endx * scale
@@ -89,7 +98,7 @@ class Road():
         y = y1 + math.cos(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
 
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addRect(0, 0, 0, 0, view.grayPen, view.grayBrush)
+            self.graphicsItem = scene.addRect(0, 0, 0, 0, QPen(Qt.gray), QBrush(Qt.gray))
         self.graphicsItem.setRect(0, 0, length, road_w)
         self.graphicsItem.setPos(x, y)
         self.graphicsItem.setRotation(self.rotd)
@@ -163,20 +172,18 @@ class Road():
 class Path():
     ''' Add a new path that cars follow.
         Current: Cars per minute '''
-    def __init__(self, name : str, roads : List[Road], flow : float):
-        self.name = name
+    def __init__(self, roads : List[Road]):
         self.roads = roads
-        self.flow = flow # Cars per minute
-
+        self.flow = 10 # Cars per minute, default is 10
 
 class Car():
-    def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, view = None):
+    def __init__(self, env, path : Path, update_dur : float, maxSpd= 20.0, scene = None):
         self.env = env
         self.path = path
         self.road = path.roads[0]
         self.update_dur = update_dur
         self.maxSpd = maxSpd
-        self.view = view
+        self.scene = scene
     
         self.graphicsItem = None
 
@@ -209,8 +216,7 @@ class Car():
         self.relative_safe_dist_drive()
         self.record()
         
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
 
         x = self.xpos * scale
         y = self.ypos * scale
@@ -220,14 +226,14 @@ class Car():
         if self.graphicsItem == None:
             randColor = np.random.randint(0, 4)
             if randColor == 0:
-                color = view.redBrush
+                color = QBrush(Qt.red)
             elif randColor == 1:
-                color = view.yellowBrush
+                color = QBrush(Qt.yellow)
             elif randColor == 2:
-                color = view.greenBrush
+                color = QBrush(Qt.green)
             elif randColor == 3:
-                color = view.blueBrush
-            self.graphicsItem = self.view.scene.addRect(x-h/2, y-w/2, h, w, view.blackPen, color)
+                color = QBrush(Qt.blue)
+            self.graphicsItem = self.scene.addRect(x-h/2, y-w/2, h, w, QPen(Qt.black), color)
             self.graphicsItem.setRect(0, 0, h, w)
         self.graphicsItem.setPos(x, y)
         self.graphicsItem.setRotation(self.rot)
@@ -236,12 +242,8 @@ class Car():
         self.end_time = self.env.timer
         self.end_time = self.end_time - self.start_time
         self.done = True
-        if self.view != None and self.graphicsItem != None:
-            self.view.scene.removeItem(self.graphicsItem)
-
-    def getWaitTime(self):
-        curTime = self.env.timer
-        return curTime - self.start_time
+        if self.scene != None and self.graphicsItem != None:
+            self.scene.removeItem(self.graphicsItem)
 
     def transit(self):
         if self.progress >= self.road.len:
@@ -313,62 +315,35 @@ class Car():
         if len(self.carcount) == 60:
             del(self.carcount[0])
             self.carcount.append(delta)
-'''
-    def trafficflow(self, minute):
-        self.minute = minute
-        for i in range(minute*60):
-            countsum += carcount[i]
-        return countsum/minute
-
-    def trafficflow_in_minute(self):
-        for i in range(60):
-            countsum  += carcount[i]
-        return countsum
-
-    def trafficflow_in_two_minute(self):
-        for i in range(120):
-            countsum  += carcount[i]
-        return countsum/2
-
-    def trafficflow_in_five_minute(self):
-        for i in range(300):
-            countsum  += carcount[i]
-        return countsum/5'''
-
-    
 
 class Traffic_signal():
-    def __init__(self, def_signal, update_dur, master=None):
+    def __init__(self, def_signal, master=None):
         self.signal = def_signal
-        self.update_dur = update_dur
         self.road : Road = None
 
         self.initialize()
         self.master = master
-        self.isSlave = False
         if self.master != None:
             self.isSlave = True
+            self.signal = Signals.RED
+        else:
+            self.isSlave = False
+            self.signal = Signals.GREEN
 
         self.graphicsItem = None
 
     def initialize(self):
-        self.state = 0
-        self.states = TrafficSignalStates.stateTime.copy()
-        self.timer = TrafficSignalStates.stateSignal[self.state]
+        self.light_timer = 0
+        self.signal_reward = 0
 
     def update(self):
-        if not self.isSlave:
-            self.timer = (self.timer * 10 - self.update_dur * 10)/10
-            if self.timer <= 0:
-                self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
-                self.timer = self.states[self.state]
-                self.signal = TrafficSignalStates.stateSignal[self.state]
-        else:
-            self.state = (self.master.state + 3) % len(TrafficSignalStates.stateSignal)
-            self.signal = TrafficSignalStates.stateSignal[self.state]
+        if self.isSlave:
+            self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
+        self.light_timer += UPDATE_DUR
+        #if self.light_timer >= SIGNAL_MAX:
+        #    self.signal_penalty += OVERTIME_PENALTY*(self.light_timer-SIGNAL_MAX)
 
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
         diam = TRAFFIC_SIGNAL_DIAM * scale
         x1 = self.road.to.x
         x2 = self.road.from_.x
@@ -383,56 +358,26 @@ class Traffic_signal():
         y = (my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
 
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.blackPen, view.greenBrush)
+            self.graphicsItem = scene.addEllipse(0, 0, 0, 0, QPen(Qt.black), QBrush(Qt.green))
         if self.signal == Signals.GREEN:
-            self.graphicsItem.setBrush(view.greenBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.green))
         if self.signal == Signals.YELLOW:
-            self.graphicsItem.setBrush(view.yellowBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.yellow))
         if self.signal == Signals.RED:
-            self.graphicsItem.setBrush(view.redBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.red))
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
-    def change_duration(self, green, red):
-        self.states[1] = green
-        self.states[4] = red
-
-    def get_next_green_time(self):
-        i = self.state
-        time = 0
-        if i == 1:
-            pass
-        else:
-            time += self.timer
-            i = (i + 1) % len(TrafficSignalStates.stateTime)
-            while i != 1:
-                time += self.states[i]
-                i = (i + 1) % len(TrafficSignalStates.stateTime)
-        return time
+    def change_signal(self, sig):
+        ''' 0 = red, 1 = green '''
+        og = 0 if self.signal == Signals.RED else 1
+        changed = og != sig
+        self.signal = Signals.RED if sig == 0 else Signals.GREEN
+        if changed:
+            if self.light_timer >= SIGNAL_MIN and self.light_timer <= SIGNAL_MAX:
+                self.signal_reward = 50
+            self.light_timer = 0
 
 class Signals(enum.IntEnum):
-    GREEN = 0
-    YELLOW = 1
-    RED = 2
-
-
-class TrafficSignalStates:
-    R_ALL_RED_1 =   0
-    G_GREEN =       1
-    Y_YELLOW =      2
-    R_ALL_RED_2 =   3
-    R_RED =         4
-    R_COUNTER_YELLOW = 5
-    
-    stateSignal = { 0: Signals.RED,
-                    1: Signals.GREEN,
-                    2: Signals.YELLOW,
-                    3: Signals.RED,
-                    4: Signals.RED,
-                    5: Signals.RED,}
-
-    stateTime = {   0: 2,
-                    1: 30, # Default value
-                    2: 3,
-                    3: 2,
-                    4: 30, # Default value
-                    5: 3}
+    RED = 0
+    GREEN = 1
+    YELLOW = 2
