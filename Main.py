@@ -18,21 +18,13 @@ class TrafficDRL():
             render_scene=self.widget.viewTab.scene
         )
 
-        #self.model = SAC(
-        #    MlpPolicy, 
-        #    self.env, 
-        #    verbose=1, 
-        #    gamma=1-1e-5, 
-        #    train_freq=1, 
-        #    learning_rate=3e-6,
-        #)
-
         self.model = PPO(
             MlpPolicyPPO,
             self.env,
             verbose=1,
             learning_rate=1e-3,
             gamma=1-1e-5,
+            ent_coef=1e-2,
             tensorboard_log="./DRL_tensorboard/"
         )
         
@@ -53,7 +45,7 @@ class TrafficDRL():
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            print(action)
+            #print(obs)
         self.env.render(close=True)
 
 if __name__ == '__main__':
@@ -61,6 +53,6 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
     for i in range(100):
-        drl_app.train(episode_cnt=1)
+        drl_app.train(episode_cnt=5)
         drl_app.test()
     os._exit(app.exec_())

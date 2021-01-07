@@ -22,8 +22,10 @@ ROAD_WIDTH = 12
 TRANSIT_TIME = 2
 SAFE_DIST = 7
 
-UNDERTIME_PENALTY = 1000
-OVERTIME_PENALTY = 500
+UNDERTIME_PER_SEC_PENALTY = 100
+UNDERTIME_BASE_PENALTY = 50
+OVERTIME_PER_SEC_PENALTY = 25
+OVERTIME_BASE_PENALTY = 50
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
 
@@ -321,8 +323,8 @@ class Traffic_signal():
         self.signal = def_signal
         self.road : Road = None
 
-        self.initialize()
         self.master = master
+        self.slave = None
         if self.master != None:
             self.isSlave = True
             self.signal = Signals.RED
@@ -333,15 +335,18 @@ class Traffic_signal():
         self.graphicsItem = None
 
     def initialize(self):
-        self.light_timer = 0
-        self.signal_reward = 0
+        self.red_light_timer = 0
+        self.signal_penalty = 0
+        if self.master != None:
+            self.master.slave = self
 
     def update(self):
         if self.isSlave:
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
-        self.light_timer += UPDATE_DUR
-        #if self.light_timer >= SIGNAL_MAX:
-        #    self.signal_penalty += OVERTIME_PENALTY*(self.light_timer-SIGNAL_MAX)
+        if self.signal == Signals.RED:
+            self.red_light_timer += UPDATE_DUR
+        if self.red_light_timer >= SIGNAL_MAX:
+            self.signal_penalty += OVERTIME_PER_SEC_PENALTY*(self.red_light_timer-SIGNAL_MAX) + OVERTIME_BASE_PENALTY
 
     def render(self, scene, scale):
         diam = TRAFFIC_SIGNAL_DIAM * scale
@@ -373,9 +378,11 @@ class Traffic_signal():
         changed = og != sig
         self.signal = Signals.RED if sig == 0 else Signals.GREEN
         if changed:
-            if self.light_timer >= SIGNAL_MIN and self.light_timer <= SIGNAL_MAX:
-                self.signal_reward = 50
-            self.light_timer = 0
+            if self.red_light_timer <= SIGNAL_MIN & self.signal == Signals.GREEN:
+                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.red_light_timer) + UNDERTIME_BASE_PENALTY
+            self.red_light_timer = 0
+            if self.slave != None:
+                self.slave.red_light_timer = 0
 
 class Signals(enum.IntEnum):
     RED = 0

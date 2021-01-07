@@ -1,5 +1,6 @@
 import numpy as np
 import gym
+import statistics
 
 from PyQt5.QtWidgets import QApplication
 
@@ -30,7 +31,7 @@ class TrafficDRL_Env(gym.Env):
 
         self.observation_space = spaces.Box(
             low=0, 
-            high=255, 
+            high=255,
             shape=(self.n_state,),
             dtype=np.float32)
         
@@ -56,13 +57,18 @@ class TrafficDRL_Env(gym.Env):
         for i, path in enumerate(self.paths):
             path.flow = flows[i]
 
+        for signal in self.signals:
+            signal.initialize()
+
         first_state = self.calculateState()
         return first_state
 
     def step(self, action):
         self.makeAction(action)
-        self.reward = 0
-        self.penalty = 0
+        self.n_exit_cars = 0
+        self.n_fail_enter = 0
+        self.signal_penalty = 0
+        #self.get_car_speed_std()
         for i in range(10):
             self.update() # update every object and sum up penalty
             if self.isRendering:
@@ -123,7 +129,7 @@ class TrafficDRL_Env(gym.Env):
                 if path.roads[0].isAvailable():
                     self.addCar(path)
                 else:
-                    self.penalty += CAR_ENTER_PENALTY
+                    self.n_exit_cars += 1
         for road in self.roads:
             road.update()
         for index, car in enumerate(self.cars):
@@ -132,11 +138,22 @@ class TrafficDRL_Env(gym.Env):
                 self.avg_waiting_time = (self.avg_waiting_time*self.tot_car_cnt + car.end_time)/(self.tot_car_cnt+1)
                 self.tot_car_cnt += 1
                 self.cars.pop(index)
-                self.reward += 10
+                self.n_exit_cars += 1
         for sig in self.signals:
-            sig.signal_penalty = 0
             sig.update()
-            self.penalty += sig.signal_penalty
+            self.signal_penalty += sig.signal_penalty
+            sig.signal_penalty = 0
+
+    def get_car_speed_std(self):
+        spd_list = []
+        for i, car in enumerate(self.cars):
+            spd_list.append(car.speed)
+        if len(spd_list) > 1:
+            return statistics.stdev(spd_list)
+        elif len(spd_list) == 1:
+            return spd_list[0]
+        else:
+            return 0
 
     def makeAction(self, raw_action):
         ''' Make an action, change the traffic signals. '''
@@ -144,11 +161,6 @@ class TrafficDRL_Env(gym.Env):
         for idx, master in enumerate(self.master_signals):
             action = Signals.RED if raw_action[idx] == 0 else Signals.GREEN
             master.change_signal(action)
-        #    green = raw_action[2*idx]
-        #    red = raw_action[2*idx+1]
-        #    action = Signals.GREEN  if green > red else Signals.RED
-        #    master.change_signal(action)
-
 
     def calculateState(self):
         state = np.zeros((self.n_state), dtype=float)
@@ -160,12 +172,11 @@ class TrafficDRL_Env(gym.Env):
             state[i*6+ 4] = road.get_mean_speed(5)
             state[i*6+ 5] = road.get_trafficflow(5)
         for j, signal in enumerate(self.signals):
-            state[len(self.roads)*6 + j] = signal.light_timer
+            state[len(self.roads)*6 + j] = signal.red_light_timer
         return state
 
     def calculateReward(self):
-        #reward = -len(self.cars) - self.penalty
-        reward = self.reward - self.penalty
+        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() # + 10*self.n_exit_cars - 100*self.n_fail_enter - 
         return reward
 
     def addIntersection(self, x : int, y : int, diam =20):
