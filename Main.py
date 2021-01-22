@@ -45,7 +45,7 @@ class TrafficDRL():
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            #print(obs)
+            print(obs)
         self.env.render(close=True)
 
 if __name__ == '__main__':

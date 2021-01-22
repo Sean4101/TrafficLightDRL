@@ -335,7 +335,7 @@ class Traffic_signal():
         self.graphicsItem = None
 
     def initialize(self):
-        self.red_light_timer = 0
+        self.light_timer = 0
         self.signal_penalty = 0
         if self.master != None:
             self.master.slave = self
@@ -343,10 +343,10 @@ class Traffic_signal():
     def update(self):
         if self.isSlave:
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
-        if self.signal == Signals.RED:
-            self.red_light_timer += UPDATE_DUR
-        if self.red_light_timer >= SIGNAL_MAX:
-            self.signal_penalty += OVERTIME_PER_SEC_PENALTY*(self.red_light_timer-SIGNAL_MAX) + OVERTIME_BASE_PENALTY
+        self.light_timer += UPDATE_DUR
+        if self.light_timer >= SIGNAL_MAX:
+            new_sig = Signals.RED if self.signal == Signals.GREEN else Signals.GREEN
+            self.change_signal(new_sig)
 
     def render(self, scene, scale):
         diam = TRAFFIC_SIGNAL_DIAM * scale
@@ -376,13 +376,15 @@ class Traffic_signal():
         ''' 0 = red, 1 = green '''
         og = 0 if self.signal == Signals.RED else 1
         changed = og != sig
-        self.signal = Signals.RED if sig == 0 else Signals.GREEN
         if changed:
-            if self.red_light_timer <= SIGNAL_MIN & self.signal == Signals.GREEN:
-                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.red_light_timer) + UNDERTIME_BASE_PENALTY
-            self.red_light_timer = 0
-            if self.slave != None:
-                self.slave.red_light_timer = 0
+            if self.light_timer <= SIGNAL_MIN & self.signal == Signals.RED:
+                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.light_timer) + UNDERTIME_BASE_PENALTY
+            
+            if self.light_timer >= 12:
+                self.light_timer = 0
+                if self.slave != None:
+                    self.slave.light_timer = 0
+                self.signal = Signals.RED if sig == 0 else Signals.GREEN
 
 class Signals(enum.IntEnum):
     RED = 0

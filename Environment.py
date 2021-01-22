@@ -172,11 +172,11 @@ class TrafficDRL_Env(gym.Env):
             state[i*6+ 4] = road.get_mean_speed(5)
             state[i*6+ 5] = road.get_trafficflow(5)
         for j, signal in enumerate(self.signals):
-            state[len(self.roads)*6 + j] = signal.red_light_timer
+            state[len(self.roads)*6 + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):
-        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() # + 10*self.n_exit_cars - 100*self.n_fail_enter - 
+        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
         return reward
 
     def addIntersection(self, x : int, y : int, diam =20):
