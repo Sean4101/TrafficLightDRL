@@ -1,28 +1,38 @@
 import numpy as np
 import math
 import enum
-from typing import List
-import random
+
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+
+from typing import List 
+
+UPDATE_DUR = 0.1
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
 
-lane_ = 2
-ROAD_WIDTH = 12 * lane_ * 2
-
 TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
 TRAFFIC_SIGNAL_AWAY = 10
-INTERSECTION_DIAM = (ROAD_WIDTH/20)*12
+INTERSECTION_DIAM = 20
+
+lane_ = 2
+ROAD_WIDTH = 12 * lane_ * 2
 
 TRANSIT_TIME = 2
 SAFE_DIST = 7
 
-
+UNDERTIME_PER_SEC_PENALTY = 100
+UNDERTIME_BASE_PENALTY = 50
+OVERTIME_PER_SEC_PENALTY = 25
+OVERTIME_BASE_PENALTY = 50
+SIGNAL_MIN = 12
+SIGNAL_MAX = 120
 
 class Intersection():
-    def __init__(self, name : str, xpos : float, ypos : float, diam : float):
-        self.name = name
+    def __init__(self, xpos : float, ypos : float, diam : float):
         self.x = xpos
         self.y = ypos
         self.diam = diam
@@ -31,25 +41,42 @@ class Intersection():
 
         self.graphicsItem = None
 
-    def render(self, view, scale):
+    def render(self, scene, scale):
 
         x = self.x * scale
         y = self.y * scale
         diam = self.diam * scale
 
-        self.view = view
+        self.scene = scene
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.grayPen, view.grayBrush)
+            self.graphicsItem = self.scene.addEllipse(0, 0, 0, 0, QPen(Qt.gray), QBrush(Qt.gray))
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
-class Lane():
-    def __init__(self, env,  name : str, lane : int, op, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
-        #make one lane
+class Road():
+    def __init__(self, env, lanenum : int, op : bool, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+        self.env = env
+        self.lanenum = lanenum
+        self.op = op
+        self.number = -1
         self.from_ = from_
         self.to = to
-        self.env = env
-        self.name = name
-        self.lane = lane
+        self.spdLim = spdLim*1000/3600
+        
+        if traffic_signal != None:
+            self.traffic_signal = traffic_signal
+            self.traffic_signal.road = self
+        else:
+            self.traffic_signal = None
+
+
+        self.lane = []
+
+        for i in range(0, lanenum):
+            add = Lane(self.env, i+1, self.from_, self.to, self.spdLim, traffic_signal=self.traffic_signal)
+            self.lane.append(add)
+
+        self.calculate_cords()
+
         self.cars = []
         self.car_count_minute = []
         self.car_density = []
@@ -68,11 +95,10 @@ class Lane():
         self.density_per_two_minute = 0
         self.density_per_five_minute=  0
         self.car_tot_count = 0
+        
+        self.graphicsItem = None
 
-        self.calculate_cords()
-    
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
         x1 = self.startx * scale
         y1 = self.starty * scale
         x2 = self.endx * scale
@@ -86,7 +112,139 @@ class Lane():
         y = y1 + math.cos(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
 
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addRect(0, 0, 0, 0, view.grayPen, view.grayBrush)
+            self.graphicsItem = scene.addRect(0, 0, 0, 0, QPen(Qt.gray), QBrush(Qt.gray))
+        self.graphicsItem.setRect(0, 0, length, road_w)
+        self.graphicsItem.setPos(x, y)
+        self.graphicsItem.setRotation(self.rotd)
+    
+    def calculate_cords(self):
+        fx, fy = self.from_.x, self.from_.y
+        tx, ty = self.to.x, self.to.y
+        dx, dy = tx-fx, ty-fy
+        raw_len = np.sqrt(dx**2 + dy**2)
+        self.startx = fx + dx*(self.from_.diam/2/raw_len)
+        self.starty = fy + dy*(self.from_.diam/2/raw_len)
+        self.endx = tx - dx*(self.from_.diam/2/raw_len)
+        self.endy = ty - dy*(self.from_.diam/2/raw_len)
+        dx, dy = self.endx-self.startx, self.endy-self.starty
+        self.len = np.sqrt(dx**2 + dy**2)
+        vec = complex(dx, dy)
+        self.rot = np.angle(vec)
+        self.rotd = np.angle(vec, deg=True)
+
+    def car_enter(self, car):
+        self.lane[car.lane-1].car_enter(car)
+        
+
+    def update(self):
+        for i in range(0, len(self.lane)):
+            self.lane[i].update()
+
+    def speed(self):
+        speed = 0
+        for i in range(0, len(self.lane)):
+            speed += self.lane[i].speed()
+        return speed/len(self.lane)
+
+    def get_car_density(self, minute):
+        den = 0
+        for i in range(0, len(self.lane)):
+            den += self.lane[i].get_car_density(minute)
+        return den/len(self.lane)
+
+    def get_mean_speed(self, minute):
+        mspeed = 0
+        for i in range(0, len(self.lane)):
+            mspeed += self.lane[i].get_mean_speed(minute)
+        return mspeed/len(self.lane)
+
+        
+
+    def get_trafficflow(self, minute):
+        trafficflow = 0
+        for i in range(0, len(self.lane)):
+            trafficflow += self.lane[i].get_trafficflow(minute)
+        return trafficflow/len(self.lane)
+
+        
+
+        
+    def initialize(self):
+        for i in range(0, len(self.lane)):
+            trafficflow += self.lane[i].initialize()
+        
+
+    def isAvailable(self):
+        bestlanenum = 0
+        lanenum = 0
+        shortest_progress = (math.sqrt((self.from_.x - self.to.x)**2 + (self.from_.y - self.to.y)**2))
+        longgest_progress = 0
+        number = 0
+        acceptlist = []
+        for i in range(0, len(self.lane)):
+            number += 1
+            lanenum, progress = self.lane[i].isAvailable()
+            if lanenum == -1 and progress == -1:
+                return number
+            if lanenum == 0 and progress == 0:
+                continue
+            if progress > longgest_progress :
+                bestlanenum = number
+                longgest_progress = progress
+        return bestlanenum
+
+class Lane():
+    def __init__(self, env, lanenum : int, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
+        self.env = env
+        self.lanenum = lanenum
+        self.number = -1
+        self.from_ = from_
+        self.to = to
+        self.spdLim = spdLim*1000/3600
+        if traffic_signal != None:
+            self.traffic_signal = traffic_signal
+            self.traffic_signal.road = self
+        else:
+            self.traffic_signal = None
+
+        self.calculate_cords()
+
+        self.cars = []
+        self.car_count_minute = []
+        self.car_density = []
+        self.car_speed = []
+
+        for i in range(300):
+            self.car_count_minute.append(0)
+            self.car_density.append(0)
+            self.car_speed.append(0)
+        self.flow_per_sec = []
+        self.trafficflow = 0
+        self.trafficflow_in_minute = 0
+        self.trafficflow_in_two_minute = 0
+        self.trafficflow_in_five_minute = 0
+        self.density_per_one_minute = 0
+        self.density_per_two_minute = 0
+        self.density_per_five_minute=  0
+        self.car_tot_count = 0
+        
+        self.graphicsItem = None
+
+    def render(self, scene, scale):
+        x1 = self.startx * scale
+        y1 = self.starty * scale
+        x2 = self.endx * scale
+        y2 = self.endy * scale
+
+        road_w = ROAD_WIDTH * scale
+
+        length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
+
+        x = x1 - math.sin(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
+        y = y1 + math.cos(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
+
+        if self.graphicsItem == None:
+            self.graphicsItem = scene.addRect(0, 0, 0, 0, QPen(Qt.gray), QBrush(Qt.gray))
         self.graphicsItem.setRect(0, 0, length, road_w)
         self.graphicsItem.setPos(x, y)
         self.graphicsItem.setRotation(self.rotd)
@@ -108,14 +266,13 @@ class Lane():
 
     def car_enter(self, car):
         self.cars.append(car)
-        
         self.car_tot_count += 1
 
     def update(self):
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
-            self.car_density.append(len(self.cars)/((math.sqrt((self.from_.x - self.to.x)**2 + (self.from_.y - self.to.y)**2))*ROAD_WIDTH))
+            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH)
             self.car_speed.append(self.speed())
             if len(self.car_count_minute) > 300:
                 self.car_count_minute.pop(0)
@@ -131,13 +288,13 @@ class Lane():
         else:
             mspeed = self.speedsum/len(self.cars)
         return mspeed
-
+    
     def get_car_density(self, minute):
         den = 0
         for i in range((5-minute)*60, 5*60):
             den += self.car_density[i]
         return den/minute
-
+    
     def get_mean_speed(self, minute):
         speed = 0
         for i in range((5-minute)*60, 5*60):
@@ -146,16 +303,7 @@ class Lane():
 
     def get_trafficflow(self, minute):
         countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
-        self.get_waittime_line
         return countsum/minute
-
-    def get_waittime_line(self):
-        line_long = 0
-        print(1)
-        for car in self.cars:
-            line_long += car.height
-        print(line_long)
-        return line_long
 
     def initialize(self):
         self.cars.clear()
@@ -166,181 +314,40 @@ class Lane():
         if len(self.cars) >= 1:
             if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
                 return 0, 0
-        return self.name[6],self.cars[len(self.cars)-1].progress
-
-class Road():
-    def __init__(self, env, lanenum : int, op : bool, name : str, from_ : Intersection, to : Intersection, spdLim: float, traffic_signal=None):
-        self.op = op
-        self.lanenum = lanenum
-        self.env = env
-        self.name = name
-        self.number = -1
-        self.from_ = from_
-        self.to = to
-        self.spdLim = spdLim*1000/3600
-        self.lane = {}
-
-
-        if traffic_signal != None:
-            self.traffic_signal = traffic_signal
-            self.traffic_signal.road = self
-        else:
-            self.traffic_signal = None
-
-        self.calculate_cords()
-        print(self.rotd)
-
-        number = self.lanenum + 1
-        for i in range(1, number):
-            add = Lane(self.env, self.name+"-"+str(i), i, self.op, self.from_, self.to, self.spdLim, self.traffic_signal)
-            self.lane[self.name+"-"+str(i)] = add
-        
-        self.graphicsItem = None
-
-    def render(self, view, scale):
-        self.view = view
-        x1 = self.startx * scale
-        y1 = self.starty * scale
-        x2 = self.endx * scale
-        y2 = self.endy * scale
-
-        road_w = ROAD_WIDTH * scale
-
-        length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
-
-        x = x1 - math.sin(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
-        y = y1 + math.cos(self.rot+math.pi*3/4)*road_w*math.sqrt(2)/2
-
-        if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addRect(0, 0, 0, 0, view.grayPen, view.grayBrush)
-        self.graphicsItem.setRect(0, 0, length, road_w)
-        self.graphicsItem.setPos(x, y)
-        self.graphicsItem.setRotation(self.rotd)
-    
-    def calculate_cords(self):
-        fx, fy = self.from_.x, self.from_.y
-        tx, ty = self.to.x, self.to.y
-        dx, dy = tx-fx, ty-fy
-        raw_len = np.sqrt(dx**2 + dy**2)
-        self.startx = fx + dx*(self.from_.diam/2/raw_len)
-        self.starty = fy + dy*(self.from_.diam/2/raw_len)
-        self.endx = tx - dx*(self.from_.diam/2/raw_len)
-        self.endy = ty - dy*(self.from_.diam/2/raw_len)
-        dx, dy = self.endx-self.startx, self.endy-self.starty
-        self.len = np.sqrt(dx**2 + dy**2)
-        vec = complex(dx, dy)
-        self.rot = np.angle(vec)
-        self.rotd = np.angle(vec, deg=True)
-        
-    def car_enter(self, car):
-        self.lane[self.name+"-"+str(car.lane)].car_enter(car)
-
-    def update(self):
-        for lane in self.lane:
-            self.lane[lane].update()
-
-    def speed(self):
-        speed = 0
-        number = 0
-        for lane in self.lane:
-            number += 1
-            speed += self.lane[lane].speed()
-        return speed/number
-
-    def get_car_density(self, minute):
-        car_density = 0
-        number = 0
-        for lane in self.lane:
-            number += 1 
-            car_density += self.lane[lane].get_car_density(minute)
-        return car_density/number
-
-    def get_mean_speed(self, minute):
-        mean_speed = 0
-        number = 0
-        for lane in self.lane:
-            number += 1
-            mean_speed += self.lane[lane].get_mean_speed(minute)
-        return mean_speed/number
-
-    def get_trafficflow(self, minute):
-        trafficflow = 0
-        number = 0
-        for lane in self.lane:
-            number += 1
-            trafficflow += self.lane[lane].get_trafficflow(minute)
-        return trafficflow/number
-
-    def get_waittime_line(self):
-        waittime = 0
-        number = 0
-        for lane in self.lane:
-            number += 1
-            waittime += self.lane[lane].get_waittime_line(minute)
-        return waittime/number
-    
-    def initialize(self):
-        for lane in self.lane:
-            self.lane[lane].initialize()
-
-    def isAvailable(self):
-        bestlanenum = 0
-        lanenum = 0
-        shortest_progress = (math.sqrt((self.from_.x - self.to.x)**2 + (self.from_.y - self.to.y)**2))
-        longgest_progress = 0
-        number = 0
-        acceptlist = []
-        for lanes in self.lane:
-            number += 1
-            lanenum, progress = self.lane[lanes].isAvailable()
-            if lanenum == -1 and progress == -1:
-                return number
-            if lanenum == 0 and progress == 0:
-                continue
-            if progress > longgest_progress :
-                bestlanenum = number
-                longgest_progress = progress
-        return bestlanenum
-    
+        return self.lanenum ,self.cars[len(self.cars)-1].progress
 
 class Path():
     ''' Add a new path that cars follow.
         Current: Cars per minute '''
-    def __init__(self, name : str, roads : List[Road], flow : float):
-        self.name = name
+    def __init__(self, roads : List[Road]):
         self.roads = roads
-        self.flow = flow # Cars per minute
-
+        self.flow = 10 # Cars per minute, default is 10
 
 class Car():
-    def __init__(self, env, lane, next_lane : int, path : Path, height : int, update_dur : float, maxSpd= 20.0, view = None):
+    def __init__(self, env, lane : int, path : Path, height : int, update_dur : float, maxSpd= 20.0, scene = None):
         self.env = env
         self.lane = lane
         self.path = path
+        self.height = height
         self.road = path.roads[0]
         self.update_dur = update_dur
         self.maxSpd = maxSpd
-        self.height = height
-        self.view = view
-        self.next_lane = next_lane
-        
-        self.graphicsItem = None
-
-        x = self.road.isAvailable()
-        self.lane = x
-
-        self.randColor = 0
-        y = random.randint(1,100)
+        self.scene = scene
+        y = np.random.randint(1,100)
         if y > 0 and y <= 20:
             self.height = 6
             self.randColor = 0
         elif y > 20 and y <= 80:
             self.height = 3
             self.randColor = 1
-        elif y > 80 and y <= 100:
+        elif y > 80 and y <= 90:
             self.height = 10
             self.randColor = 2
+        elif y > 90 and y <= 100:
+            self.height = 8
+            self.randColor = 3
         
+        self.graphicsItem = None
 
         self.tot_stages = len(self.path.roads)
         self.stage = 0
@@ -371,8 +378,7 @@ class Car():
         self.relative_safe_dist_drive()
         self.record()
         
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
 
         x = self.xpos * scale
         y = self.ypos * scale
@@ -380,15 +386,16 @@ class Car():
         w = CAR_WIDTH * scale
 
         if self.graphicsItem == None:
+            #randColor = np.random.randint(0, 4)
             if self.randColor == 0:
-                color = view.redBrush
+                color = QBrush(Qt.red)
             elif self.randColor == 1:
-                color = view.yellowBrush
+                color = QBrush(Qt.yellow)
             elif self.randColor == 2:
-                color = view.greenBrush
-            '''elif randColor == 3:
-                color = view.blueBrush'''
-            self.graphicsItem = self.view.scene.addRect(x-h/2, y-w/2, h, w, view.blackPen, color)
+                color = QBrush(Qt.green)
+            elif self.randColor == 3:
+                color = QBrush(Qt.blue)
+            self.graphicsItem = self.scene.addRect(x-h/2, y-w/2, h, w, QPen(Qt.black), color)
             self.graphicsItem.setRect(0, 0, h, w)
         self.graphicsItem.setPos(x, y)
         self.graphicsItem.setRotation(self.rot)
@@ -397,25 +404,20 @@ class Car():
         self.end_time = self.env.timer
         self.end_time = self.end_time - self.start_time
         self.done = True
-        if self.view != None and self.graphicsItem != None:
-            self.view.scene.removeItem(self.graphicsItem)
-
-    def getWaitTime(self):
-        curTime = self.env.timer
-        return curTime - self.start_time
+        if self.scene != None and self.graphicsItem != None:
+            self.scene.removeItem(self.graphicsItem)
 
     def transit(self):
         if self.progress >= self.road.len:
             self.in_intersection = True
             self.progress = 0
-            self.road.lane[self.road.name+"-"+str(self.lane)].cars.remove(self)
-        
+            self.road.lane[self.lane-1].cars.remove(self)
+
             self.stage += 1
             if self.stage >= self.tot_stages:
                 self.leave()
                 return True
             self.road = self.path.roads[self.stage]
-
             self.road.car_enter(self)
 
         if self.in_intersection:
@@ -428,31 +430,26 @@ class Car():
         return False
 
     def relative_safe_dist_drive(self):
-        idx = self.road.lane[self.road.name+"-"+str(self.lane)].cars.index(self)
+        idx = self.road.lane[self.lane-1].cars.index(self)
         if idx == 0:
             if self.road.traffic_signal != None:
                 if self.road.traffic_signal.signal != Signals.RED:
                     if self.stage < self.tot_stages - 1:
                         if self.path.roads[self.stage+1].isAvailable() == 0 and self.road.len - self.prev_progress - self.height/2 - SAFE_DIST< TRAFFIC_SIGNAL_DIST:
                             self.speed = 0
-                        else :
+                        else:
                             self.speed = self.maxSpd
-
-
-                        
                     else:
                         self.speed = self.maxSpd
                 else:
-                    
-                    if self.road.len - self.prev_progress - self.height/2< TRAFFIC_SIGNAL_DIST: # m
+                    if self.road.len - self.prev_progress < TRAFFIC_SIGNAL_DIST: # m
                         self.speed = 0
-
                     else:
-                        self.speed = self.maxSpd       
+                        self.speed = self.maxSpd
             else:
                 self.speed = self.maxSpd
         else:
-            front_car = self.road.lane[self.road.name+"-"+str(self.lane)].cars[idx - 1]
+            front_car = self.road.lane[self.lane-1].cars[idx - 1]
             front_spd = front_car.prev_speed
             front_dist = front_car.prev_progress - self.progress - self.height/2 - front_car.height/2
             spd = front_dist + front_spd * self.update_dur - SAFE_DIST
@@ -465,7 +462,7 @@ class Car():
 
         offset = ((ROAD_WIDTH/(lane_*2))-1)*int(self.lane)
 
-        if self.road.rotd >= 0 and self.road.rotd <= 45 or self.road.rotd >= 180 and self.road.rotd <= 225:
+        if (self.road.rotd >= 0 and self.road.rotd <= 45) or (self.road.rotd >= 180 and self.road.rotd <= 225):
             if self.road.op == False:
                 self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len #+ offset
                 self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len + offset
@@ -497,37 +494,36 @@ class Car():
             self.carcount.append(delta)
 
 class Traffic_signal():
-    def __init__(self, def_signal, update_dur, master=None):
+    def __init__(self, def_signal, master=None):
         self.signal = def_signal
-        self.update_dur = update_dur
         self.road : Road = None
 
-        self.initialize()
         self.master = master
-        self.isSlave = False
+        self.slave = None
         if self.master != None:
             self.isSlave = True
+            self.signal = Signals.RED
+        else:
+            self.isSlave = False
+            self.signal = Signals.GREEN
 
         self.graphicsItem = None
 
     def initialize(self):
-        self.state = 0
-        self.states = TrafficSignalStates.stateTime.copy()
-        self.timer = TrafficSignalStates.stateSignal[self.state]
+        self.light_timer = 0
+        self.signal_penalty = 0
+        if self.master != None:
+            self.master.slave = self
 
     def update(self):
-        if not self.isSlave:
-            self.timer = (self.timer * 10 - self.update_dur * 10)/10
-            if self.timer <= 0:
-                self.state = (self.state + 1) % len(TrafficSignalStates.stateSignal)
-                self.timer = self.states[self.state]
-                self.signal = TrafficSignalStates.stateSignal[self.state]
-        else:
-            self.state = (self.master.state + 3) % len(TrafficSignalStates.stateSignal)
-            self.signal = TrafficSignalStates.stateSignal[self.state]
+        if self.isSlave:
+            self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
+        self.light_timer += UPDATE_DUR
+        if self.light_timer >= SIGNAL_MAX:
+            new_sig = Signals.RED if self.signal == Signals.GREEN else Signals.GREEN
+            self.change_signal(new_sig)
 
-    def render(self, view, scale):
-        self.view = view
+    def render(self, scene, scale):
         diam = TRAFFIC_SIGNAL_DIAM * scale
         x1 = self.road.to.x
         x2 = self.road.from_.x
@@ -542,56 +538,30 @@ class Traffic_signal():
         y = (my + math.sin(rot+math.pi*3/2)*TRAFFIC_SIGNAL_AWAY) * scale
 
         if self.graphicsItem == None:
-            self.graphicsItem = view.scene.addEllipse(0, 0, 0, 0, view.blackPen, view.greenBrush)
+            self.graphicsItem = scene.addEllipse(0, 0, 0, 0, QPen(Qt.black), QBrush(Qt.green))
         if self.signal == Signals.GREEN:
-            self.graphicsItem.setBrush(view.greenBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.green))
         if self.signal == Signals.YELLOW:
-            self.graphicsItem.setBrush(view.yellowBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.yellow))
         if self.signal == Signals.RED:
-            self.graphicsItem.setBrush(view.redBrush)
+            self.graphicsItem.setBrush(QBrush(Qt.red))
         self.graphicsItem.setRect(x-diam/2, y-diam/2, diam, diam)
 
-    def change_duration(self, green, red):
-        self.states[1] = green
-        self.states[4] = red
-
-    def get_next_green_time(self):
-        i = self.state
-        time = 0
-        if i == 1:
-            pass
-        else:
-            time += self.timer
-            i = (i + 1) % len(TrafficSignalStates.stateTime)
-            while i != 1:
-                time += self.states[i]
-                i = (i + 1) % len(TrafficSignalStates.stateTime)
-        return time
+    def change_signal(self, sig):
+        ''' 0 = red, 1 = green '''
+        og = 0 if self.signal == Signals.RED else 1
+        changed = og != sig
+        if changed:
+            if self.light_timer <= SIGNAL_MIN & self.signal == Signals.RED:
+                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.light_timer) + UNDERTIME_BASE_PENALTY
+            
+            if self.light_timer >= 12:
+                self.light_timer = 0
+                if self.slave != None:
+                    self.slave.light_timer = 0
+                self.signal = Signals.RED if sig == 0 else Signals.GREEN
 
 class Signals(enum.IntEnum):
-    GREEN = 0
-    YELLOW = 1
-    RED = 2
-
-
-class TrafficSignalStates:
-    R_ALL_RED_1 =   0
-    G_GREEN =       1
-    Y_YELLOW =      2
-    R_ALL_RED_2 =   3
-    R_RED =         4
-    R_COUNTER_YELLOW = 5
-    
-    stateSignal = { 0: Signals.RED,
-                    1: Signals.GREEN,
-                    2: Signals.YELLOW,
-                    3: Signals.RED,
-                    4: Signals.RED,
-                    5: Signals.RED,}
-
-    stateTime = {   0: 2,
-                    1: 30, # Default value
-                    2: 3,
-                    3: 2,
-                    4: 30, # Default value
-                    5: 3}
+    RED = 0
+    GREEN = 1
+    YELLOW = 2
