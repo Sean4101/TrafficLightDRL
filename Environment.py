@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication
 from typing import List
 from gym import spaces
 from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
-
+from Env_Objects import lane_, CAR_HEIGHT
 STATE_EACH_ROAD = 6
 FLOW_MIN = 0
 FLOW_MAX = 20
@@ -102,18 +102,43 @@ class TrafficDRL_Env(gym.Env):
         sig2 = self.addTrafficSignal(Signals.RED, master=sig1)
 
         o = self.addIntersection(0, 0)
-        a = self.addIntersection(200, 0)
+        a = self.addIntersection(500, 500)
         b = self.addIntersection(-200, 0)
         c = self.addIntersection(0, 200)
         d = self.addIntersection(0, -200)
 
-        ao = self.addRoad(a, o, sig1)
-        ob = self.addRoad(o, b)
-        co = self.addRoad(c, o, sig2)
-        od = self.addRoad(o, d)
+        ao = self.addRoad(lane_, False, a, o, sig1)
+        ob = self.addRoad(lane_, False, o, b)
+        co = self.addRoad(lane_, False, c, o, sig2)
+        od = self.addRoad(lane_, False, o, d)
+
+        oa = self.addRoad(lane_, True, o, a)
+        bo = self.addRoad(lane_, True, b, o, sig1)
+        oc = self.addRoad(lane_, True, o, c)
+        do = self.addRoad(lane_, True, d, o, sig2)
+
 
         p1 = self.addPath([ao, ob])
+        p2 = self.addPath([ao, oc])
+        p3 = self.addPath([ao, od])
+
+        p4 = self.addPath([bo, oa])
+        p5 = self.addPath([bo, oc])
+        p6 = self.addPath([bo, od])
+
+        p7 = self.addPath([co, oa])
+        p8 = self.addPath([co, ob])
+        p9 = self.addPath([co, od])
+
+        p10 = self.addPath([do, oa])
+        p11 = self.addPath([do, ob])
+        p12 = self.addPath([do, oc])
+
+        '''p1 = self.addPath([ao, ob])
         p2 = self.addPath([co, od])
+        p3 = self.addPath([ob, ao])
+        p4 = self.addPath([od, co])'''
+
         
         #self.n_action = (len(self.master_signals)* 2)
         self.n_action = len(self.master_signals)
@@ -126,10 +151,11 @@ class TrafficDRL_Env(gym.Env):
             rand = np.random.rand()
             prob = path.flow/10/60
             if rand < prob:
-                if path.roads[0].isAvailable():
-                    self.addCar(path)
+                if path.roads[0].isAvailable() != 0:
+                    self.addCar(path.roads[0].isAvailable(), path, CAR_HEIGHT)
                 else:
                     self.n_exit_cars += 1
+
         for road in self.roads:
             road.update()
         for index, car in enumerate(self.cars):
@@ -184,9 +210,9 @@ class TrafficDRL_Env(gym.Env):
         self.intersections.append(add)
         return add
 
-    def addRoad(self, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
+    def addRoad(self, lane : int, op : bool, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
         lim = spdLim/3600*1000
-        add = Road(self, start, end, lim, traffic_signal=traffic_signal)
+        add = Road(self, lane, op, start, end, lim, traffic_signal=traffic_signal)
         add.number = len(self.roads)
         self.roads.append(add)
         return add
@@ -203,8 +229,8 @@ class TrafficDRL_Env(gym.Env):
         self.signals.append(add)
         return add
 
-    def addCar(self, path : Path, maxSpd=20.0):
-        add = Car(self, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
+    def addCar(self, lane : int, path : Path, height : int, maxSpd=20.0):
+        add = Car(self,lane, path, height, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
         self.cars.append(add)
         return add
 

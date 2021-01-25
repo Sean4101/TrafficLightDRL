@@ -53,6 +53,7 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
     for i in range(100):
+        drl_app.test()
         drl_app.train(episode_cnt=5)
         drl_app.test()
     os._exit(app.exec_())
