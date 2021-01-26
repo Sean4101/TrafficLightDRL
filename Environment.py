@@ -102,7 +102,7 @@ class TrafficDRL_Env(gym.Env):
         sig2 = self.addTrafficSignal(Signals.RED, master=sig1)
 
         o = self.addIntersection(0, 0)
-        a = self.addIntersection(500, 500)
+        a = self.addIntersection(200, 0)
         b = self.addIntersection(-200, 0)
         c = self.addIntersection(0, 200)
         d = self.addIntersection(0, -200)
@@ -154,7 +154,7 @@ class TrafficDRL_Env(gym.Env):
                 if path.roads[0].isAvailable() != 0:
                     self.addCar(path.roads[0].isAvailable(), path, CAR_HEIGHT)
                 else:
-                    self.n_exit_cars += 1
+                    self.n_fail_enter += 1
 
         for road in self.roads:
             road.update()
@@ -197,12 +197,14 @@ class TrafficDRL_Env(gym.Env):
             state[i*6+ 3] = road.get_car_density(5)
             state[i*6+ 4] = road.get_mean_speed(5)
             state[i*6+ 5] = road.get_trafficflow(5)
+            state[i*6+ 6] = road.get_waitline_long()
+
         for j, signal in enumerate(self.signals):
             state[len(self.roads)*6 + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):
-        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
+        reward = 10*self.signal_penalty - 5*self.avg_waiting_time - 10*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
         return reward
 
     def addIntersection(self, x : int, y : int, diam =20):

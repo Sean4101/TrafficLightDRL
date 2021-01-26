@@ -78,22 +78,8 @@ class Road():
         self.calculate_cords()
 
         self.cars = []
-        self.car_count_minute = []
-        self.car_density = []
-        self.car_speed = []
 
-        for i in range(300):
-            self.car_count_minute.append(0)
-            self.car_density.append(0)
-            self.car_speed.append(0)
         self.flow_per_sec = []
-        self.trafficflow = 0
-        self.trafficflow_in_minute = 0
-        self.trafficflow_in_two_minute = 0
-        self.trafficflow_in_five_minute = 0
-        self.density_per_one_minute = 0
-        self.density_per_two_minute = 0
-        self.density_per_five_minute=  0
         self.car_tot_count = 0
         
         self.graphicsItem = None
@@ -134,6 +120,7 @@ class Road():
 
     def car_enter(self, car):
         self.lane[car.lane-1].car_enter(car)
+        self.cars.append(car)
         
 
     def update(self):
@@ -147,10 +134,7 @@ class Road():
         return speed/len(self.lane)
 
     def get_car_density(self, minute):
-        den = 0
-        for i in range(0, len(self.lane)):
-            den += self.lane[i].get_car_density(minute)
-        return den/len(self.lane)
+        return len(self.cars)/((self.lanenum*12)*(math.sqrt((self.from_.x - self.to.x)**2 + (self.from_.y - self.to.y)**2)))
 
     def get_mean_speed(self, minute):
         mspeed = 0
@@ -165,13 +149,19 @@ class Road():
         for i in range(0, len(self.lane)):
             trafficflow += self.lane[i].get_trafficflow(minute)
         return trafficflow/len(self.lane)
+    
+    def get_waitline_long(self):
+        wlong = 0
+        for i in range(0, len(self.lane)):
+            wlong += self.lane[i].get_waitline_long()
+        return wlong
 
         
 
         
     def initialize(self):
         for i in range(0, len(self.lane)):
-            trafficflow += self.lane[i].initialize()
+            self.lane[i].initialize()
         
 
     def isAvailable(self):
@@ -289,11 +279,11 @@ class Lane():
             mspeed = self.speedsum/len(self.cars)
         return mspeed
     
-    def get_car_density(self, minute):
+    '''def get_car_density(self, minute):
         den = 0
         for i in range((5-minute)*60, 5*60):
             den += self.car_density[i]
-        return den/minute
+        return den/minute'''
     
     def get_mean_speed(self, minute):
         speed = 0
@@ -304,6 +294,12 @@ class Lane():
     def get_trafficflow(self, minute):
         countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
         return countsum/minute
+
+    def get_waitline_long(self):
+        if len(self.cars) == 0:
+            return 0
+        else:
+            return self.cars[len(self.cars)-1].progress
 
     def initialize(self):
         self.cars.clear()
@@ -333,7 +329,8 @@ class Car():
         self.update_dur = update_dur
         self.maxSpd = maxSpd
         self.scene = scene
-        y = np.random.randint(1,100)
+
+        '''y = np.random.randint(1,100)
         if y > 0 and y <= 20:
             self.height = 6
             self.randColor = 0
@@ -345,7 +342,7 @@ class Car():
             self.randColor = 2
         elif y > 90 and y <= 100:
             self.height = 8
-            self.randColor = 3
+            self.randColor = 3'''
         
         self.graphicsItem = None
 
@@ -386,7 +383,7 @@ class Car():
         w = CAR_WIDTH * scale
 
         if self.graphicsItem == None:
-            #randColor = np.random.randint(0, 4)
+            self.randColor = np.random.randint(0, 4)
             if self.randColor == 0:
                 color = QBrush(Qt.red)
             elif self.randColor == 1:
@@ -412,6 +409,7 @@ class Car():
             self.in_intersection = True
             self.progress = 0
             self.road.lane[self.lane-1].cars.remove(self)
+            self.road.cars.remove(self)
 
             self.stage += 1
             if self.stage >= self.tot_stages:
@@ -460,7 +458,7 @@ class Car():
             self.speed = spd
         self.progress += self.speed * self.update_dur
 
-        offset = ((ROAD_WIDTH/(lane_*2))-1)*int(self.lane)
+        offset = ((ROAD_WIDTH/(self.road.lanenum*2))-1)*int(self.lane)
 
         if (self.road.rotd >= 0 and self.road.rotd <= 45) or (self.road.rotd >= 180 and self.road.rotd <= 225):
             if self.road.op == False:
