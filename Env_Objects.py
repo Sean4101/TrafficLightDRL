@@ -12,22 +12,18 @@ UPDATE_DUR = 0.1
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
+lane = 2
 
 TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
-TRAFFIC_SIGNAL_AWAY = 10
+TRAFFIC_SIGNAL_AWAY = 15
 INTERSECTION_DIAM = 20
 
-lane_ = 2
-ROAD_WIDTH = 12 * lane_ * 2
+ROAD_WIDTH = 12 * 2
 
 TRANSIT_TIME = 2
-SAFE_DIST = 7
+SAFE_DIST = 5
 
-UNDERTIME_PER_SEC_PENALTY = 100
-UNDERTIME_BASE_PENALTY = 50
-OVERTIME_PER_SEC_PENALTY = 25
-OVERTIME_BASE_PENALTY = 50
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
 
@@ -90,7 +86,7 @@ class Road():
         x2 = self.endx * scale
         y2 = self.endy * scale
 
-        road_w = ROAD_WIDTH * scale
+        road_w = ROAD_WIDTH * scale * self.lanenum
 
         length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
 
@@ -118,10 +114,9 @@ class Road():
         self.rot = np.angle(vec)
         self.rotd = np.angle(vec, deg=True)
 
-    def car_enter(self, car):
-        self.lane[car.lane-1].car_enter(car)
+    def car_enter(self, car, lanenum):
+        self.lane[lanenum].car_enter(car)
         self.cars.append(car)
-        
 
     def update(self):
         for i in range(0, len(self.lane)):
@@ -141,8 +136,6 @@ class Road():
         for i in range(0, len(self.lane)):
             mspeed += self.lane[i].get_mean_speed(minute)
         return mspeed/len(self.lane)
-
-        
 
     def get_trafficflow(self, minute):
         trafficflow = 0
@@ -164,22 +157,18 @@ class Road():
             self.lane[i].initialize()
         
 
-    def isAvailable(self):
-        bestlanenum = 0
+    def bestLaneNum(self):
+        bestlanenum = -1
         lanenum = 0
-        shortest_progress = (math.sqrt((self.from_.x - self.to.x)**2 + (self.from_.y - self.to.y)**2))
         longgest_progress = 0
-        number = 0
-        acceptlist = []
         for i in range(0, len(self.lane)):
-            number += 1
-            lanenum, progress = self.lane[i].isAvailable()
-            if lanenum == -1 and progress == -1:
-                return number
-            if lanenum == 0 and progress == 0:
+            progress = self.lane[i].last_progress()
+            if progress == -1:
+                return i
+            if progress == 0:
                 continue
             if progress > longgest_progress :
-                bestlanenum = number
+                bestlanenum = i
                 longgest_progress = progress
         return bestlanenum
 
@@ -226,7 +215,7 @@ class Lane():
         x2 = self.endx * scale
         y2 = self.endy * scale
 
-        road_w = ROAD_WIDTH * scale
+        road_w = ROAD_WIDTH * self.lanenum * scale
 
         length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
 
@@ -262,7 +251,7 @@ class Lane():
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
-            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH)
+            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH * self.lanenum)
             self.car_speed.append(self.speed())
             if len(self.car_count_minute) > 300:
                 self.car_count_minute.pop(0)
@@ -304,45 +293,32 @@ class Lane():
     def initialize(self):
         self.cars.clear()
 
-    def isAvailable(self):
+    def last_progress(self):
         if len(self.cars) == 0:
-            return -1, -1
-        if len(self.cars) >= 1:
+            return -1
+        elif len(self.cars) >= 1:
             if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
-                return 0, 0
-        return self.lanenum ,self.cars[len(self.cars)-1].progress
+                return 0
+        return self.cars[len(self.cars)-1].progress
 
 class Path():
-    ''' Add a new path that cars follow.
-        Current: Cars per minute '''
+    ''' Add a new path that cars follow.'''
     def __init__(self, roads : List[Road]):
         self.roads = roads
         self.flow = 10 # Cars per minute, default is 10
 
 class Car():
-    def __init__(self, env, lane : int, path : Path, height : int, update_dur : float, maxSpd= 20.0, scene = None):
+    def __init__(self, env, lane : int, path : Path, update_dur : float, maxSpd= 20.0, scene = None):
         self.env = env
         self.lane = lane
         self.path = path
-        self.height = height
         self.road = path.roads[0]
         self.update_dur = update_dur
         self.maxSpd = maxSpd
         self.scene = scene
 
-        '''y = np.random.randint(1,100)
-        if y > 0 and y <= 20:
-            self.height = 6
-            self.randColor = 0
-        elif y > 20 and y <= 80:
-            self.height = 3
-            self.randColor = 1
-        elif y > 80 and y <= 90:
-            self.height = 10
-            self.randColor = 2
-        elif y > 90 and y <= 100:
-            self.height = 8
-            self.randColor = 3'''
+        
+
         
         self.graphicsItem = None
 
@@ -360,7 +336,7 @@ class Car():
 
         self.done = False
 
-        self.road.car_enter(self)
+        self.road.car_enter(self, self.lane)
         self.xpos = self.road.startx
         self.ypos = self.road.starty
 
@@ -379,7 +355,7 @@ class Car():
 
         x = self.xpos * scale
         y = self.ypos * scale
-        h = self.height * scale
+        h = CAR_HEIGHT * scale
         w = CAR_WIDTH * scale
 
         if self.graphicsItem == None:
@@ -408,7 +384,7 @@ class Car():
         if self.progress >= self.road.len:
             self.in_intersection = True
             self.progress = 0
-            self.road.lane[self.lane-1].cars.remove(self)
+            self.road.lane[self.lane].cars.remove(self)
             self.road.cars.remove(self)
 
             self.stage += 1
@@ -416,7 +392,11 @@ class Car():
                 self.leave()
                 return True
             self.road = self.path.roads[self.stage]
-            self.road.car_enter(self)
+            self.lane = self.road.bestLaneNum()
+            if self.lane == -1:
+                self.lane = 0
+            self.road.car_enter(self, self.lane)
+            self.rot = self.road.rotd
 
         if self.in_intersection:
             self.transit_timer += self.update_dur
@@ -428,12 +408,12 @@ class Car():
         return False
 
     def relative_safe_dist_drive(self):
-        idx = self.road.lane[self.lane-1].cars.index(self)
+        idx = self.road.lane[self.lane].cars.index(self)
         if idx == 0:
             if self.road.traffic_signal != None:
                 if self.road.traffic_signal.signal != Signals.RED:
                     if self.stage < self.tot_stages - 1:
-                        if self.path.roads[self.stage+1].isAvailable() == 0 and self.road.len - self.prev_progress - self.height/2 - SAFE_DIST< TRAFFIC_SIGNAL_DIST:
+                        if self.path.roads[self.stage+1].bestLaneNum() == -1 and self.road.len - self.prev_progress - CAR_HEIGHT/2 - SAFE_DIST< TRAFFIC_SIGNAL_DIST:
                             self.speed = 0
                         else:
                             self.speed = self.maxSpd
@@ -447,9 +427,9 @@ class Car():
             else:
                 self.speed = self.maxSpd
         else:
-            front_car = self.road.lane[self.lane-1].cars[idx - 1]
+            front_car = self.road.lane[self.lane].cars[idx - 1]
             front_spd = front_car.prev_speed
-            front_dist = front_car.prev_progress - self.progress - self.height/2 - front_car.height/2
+            front_dist = front_car.prev_progress - self.progress - CAR_HEIGHT
             spd = front_dist + front_spd * self.update_dur - SAFE_DIST
             if spd > self.maxSpd:
                 spd = self.maxSpd
@@ -458,27 +438,12 @@ class Car():
             self.speed = spd
         self.progress += self.speed * self.update_dur
 
-        offset = ((ROAD_WIDTH/(self.road.lanenum*2))-1)*int(self.lane)
-
-        if (self.road.rotd >= 0 and self.road.rotd <= 45) or (self.road.rotd >= 180 and self.road.rotd <= 225):
-            if self.road.op == False:
-                self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len #+ offset
-                self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len + offset
-
-            elif self.road.op == True:
-                self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len #- offset
-                self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len - offset
-        else:
-            if self.road.op == False:
-                self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len + offset
-                self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len #+ offset
-
-            elif self.road.op == True:
-                self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len - offset
-                self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len #- offset
-
+        offset = (self.lane)*(ROAD_WIDTH)*0.5+ROAD_WIDTH/4
+        self.xpos = self.road.startx * (1 - self.progress/self.road.len) + self.road.endx * self.progress/self.road.len - offset * math.sin(self.road.rot)
+        self.ypos = self.road.starty * (1 - self.progress/self.road.len) + self.road.endy * self.progress/self.road.len + offset * math.cos(self.road.rot)
         self.rot = self.road.rotd
-    
+
+        
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
@@ -509,7 +474,6 @@ class Traffic_signal():
 
     def initialize(self):
         self.light_timer = 0
-        self.signal_penalty = 0
         if self.master != None:
             self.master.slave = self
 
@@ -550,10 +514,7 @@ class Traffic_signal():
         og = 0 if self.signal == Signals.RED else 1
         changed = og != sig
         if changed:
-            if self.light_timer <= SIGNAL_MIN & self.signal == Signals.RED:
-                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.light_timer) + UNDERTIME_BASE_PENALTY
-            
-            if self.light_timer >= 12:
+            if self.light_timer >= SIGNAL_MIN:
                 self.light_timer = 0
                 if self.slave != None:
                     self.slave.light_timer = 0
