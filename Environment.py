@@ -7,7 +7,10 @@ from PyQt5.QtWidgets import QApplication
 from typing import List
 from gym import spaces
 from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
-from Env_Objects import lane_, CAR_HEIGHT
+from Env_Objects import CAR_HEIGHT
+
+from openpyxl import Workbook
+
 STATE_EACH_ROAD = 6
 FLOW_MIN = 0
 FLOW_MAX = 20
@@ -19,29 +22,30 @@ class TrafficDRL_Env(gym.Env):
     def __init__(self, render_scene=None):
         super(TrafficDRL_Env, self).__init__()
         
+        self.episode_cnt = 0
         self.buildEnv()
-
-        #self.action_space = spaces.Box(
-        #    low=0, 
-        #    high=1, 
-        #    shape=(self.n_action,), 
-        #    dtype=np.float32)
-
+    
         self.action_space = spaces.MultiBinary(self.n_action)
-
         self.observation_space = spaces.Box(
             low=0, 
             high=255,
             shape=(self.n_state,),
             dtype=np.float32)
         
-        self.step_per_epi = 3600
+        self.step_per_epi = 2048
 
         self.render_scene = render_scene
         self.isRendering = False
         self.scale = 1
 
-    def reset(self, fixed_flow=None, episode_len=3600):
+        self.wb = Workbook()
+        self.ws = self.wb.active
+        self.ws.append(["Episode Count", "Average Wait", "Fail Enter"])
+
+    def reset(self, fixed_flow=None, episode_len=2048, test=False):
+        self.isTest = test
+        if self.isTest == False:
+            self.episode_cnt += 1
         self.timer = 0
         self.episode_len = episode_len
         self.buildEnv()
@@ -50,9 +54,12 @@ class TrafficDRL_Env(gym.Env):
         self.avg_waiting_time = 0
         self.tot_car_cnt = 0
 
+        self.initialize_episode_log()
+
         if fixed_flow == None:
             flows = np.random.randint(FLOW_MIN, high=FLOW_MAX, size=(len(self.paths)))
-            #flows = [10, 10, 10, 10]
+        else:
+            flows = fixed_flow
 
         for i, path in enumerate(self.paths):
             path.flow = flows[i]
@@ -67,17 +74,22 @@ class TrafficDRL_Env(gym.Env):
         self.makeAction(action)
         self.n_exit_cars = 0
         self.n_fail_enter = 0
-        self.signal_penalty = 0
-        #self.get_car_speed_std()
         for i in range(10):
             self.update() # update every object and sum up penalty
             if self.isRendering:
                 self.update_render()
+        
         finished = self.timer>=self.episode_len
         state_ = self.calculateState()
         reward = self.calculateReward()
         done = finished
         info = {}
+
+        self.ep_log_tot_fail_enter += self.n_fail_enter
+
+        if finished:
+            self.append_episode_log()
+
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -102,45 +114,19 @@ class TrafficDRL_Env(gym.Env):
         sig2 = self.addTrafficSignal(Signals.RED, master=sig1)
 
         o = self.addIntersection(0, 0)
-        a = self.addIntersection(500, 500)
-        b = self.addIntersection(-200, 0)
-        c = self.addIntersection(0, 200)
-        d = self.addIntersection(0, -200)
+        a = self.addIntersection(0, 200)
+        b = self.addIntersection(0, -200)
+        c = self.addIntersection(200, 0)
+        d = self.addIntersection(-200, 0)
 
-        ao = self.addRoad(lane_, False, a, o, sig1)
-        ob = self.addRoad(lane_, False, o, b)
-        co = self.addRoad(lane_, False, c, o, sig2)
-        od = self.addRoad(lane_, False, o, d)
-
-        oa = self.addRoad(lane_, True, o, a)
-        bo = self.addRoad(lane_, True, b, o, sig1)
-        oc = self.addRoad(lane_, True, o, c)
-        do = self.addRoad(lane_, True, d, o, sig2)
-
+        ao = self.addRoad(1, False, a, o, sig1)
+        ob = self.addRoad(1, False, o, b)
+        co = self.addRoad(1, False, c, o, sig2)
+        od = self.addRoad(1, False, o, d)
 
         p1 = self.addPath([ao, ob])
-        p2 = self.addPath([ao, oc])
-        p3 = self.addPath([ao, od])
+        p1 = self.addPath([co, od])
 
-        p4 = self.addPath([bo, oa])
-        p5 = self.addPath([bo, oc])
-        p6 = self.addPath([bo, od])
-
-        p7 = self.addPath([co, oa])
-        p8 = self.addPath([co, ob])
-        p9 = self.addPath([co, od])
-
-        p10 = self.addPath([do, oa])
-        p11 = self.addPath([do, ob])
-        p12 = self.addPath([do, oc])
-
-        '''p1 = self.addPath([ao, ob])
-        p2 = self.addPath([co, od])
-        p3 = self.addPath([ob, ao])
-        p4 = self.addPath([od, co])'''
-
-        
-        #self.n_action = (len(self.master_signals)* 2)
         self.n_action = len(self.master_signals)
         self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.signals)
 
@@ -151,10 +137,7 @@ class TrafficDRL_Env(gym.Env):
             rand = np.random.rand()
             prob = path.flow/10/60
             if rand < prob:
-                if path.roads[0].isAvailable() != 0:
-                    self.addCar(path.roads[0].isAvailable(), path, CAR_HEIGHT)
-                else:
-                    self.n_exit_cars += 1
+                self.addCar(path.roads[0].bestLaneNum(), path, CAR_HEIGHT)
 
         for road in self.roads:
             road.update()
@@ -167,8 +150,6 @@ class TrafficDRL_Env(gym.Env):
                 self.n_exit_cars += 1
         for sig in self.signals:
             sig.update()
-            self.signal_penalty += sig.signal_penalty
-            sig.signal_penalty = 0
 
     def get_car_speed_std(self):
         spd_list = []
@@ -191,18 +172,18 @@ class TrafficDRL_Env(gym.Env):
     def calculateState(self):
         state = np.zeros((self.n_state), dtype=float)
         for i, road in enumerate(self.roads):
-            state[i*6+ 0] = road.get_car_density(1)
-            state[i*6+ 1] = road.get_mean_speed(1)
-            state[i*6+ 2] = road.get_trafficflow(1)
-            state[i*6+ 3] = road.get_car_density(5)
-            state[i*6+ 4] = road.get_mean_speed(5)
-            state[i*6+ 5] = road.get_trafficflow(5)
+            state[i*6+0] = road.get_car_density(1)
+            state[i*6+1] = road.get_mean_speed(1)
+            state[i*6+2] = road.get_trafficflow(1)
+            state[i*6+3] = road.get_car_density(5)
+            state[i*6+4] = road.get_mean_speed(5)
+            state[i*6+5] = road.get_trafficflow(5)
         for j, signal in enumerate(self.signals):
             state[len(self.roads)*6 + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):
-        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
+        reward = -10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
         return reward
 
     def addIntersection(self, x : int, y : int, diam =20):
@@ -230,9 +211,11 @@ class TrafficDRL_Env(gym.Env):
         return add
 
     def addCar(self, lane : int, path : Path, height : int, maxSpd=20.0):
-        add = Car(self,lane, path, height, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
+        if lane == -1:
+            self.n_fail_enter += 1
+            return
+        add = Car(self, lane, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
         self.cars.append(add)
-        return add
 
     def update_render(self):
         for inte in self.intersections:
@@ -252,3 +235,12 @@ class TrafficDRL_Env(gym.Env):
                 car.graphicsItem = None
         for road in self.roads:
             road.initialize()
+
+    def initialize_episode_log(self):
+        self.ep_log_tot_fail_enter = 0
+    
+    def append_episode_log(self):
+        if self.isTest == False:
+            self.ws.append([self.episode_cnt , self.avg_waiting_time, self.ep_log_tot_fail_enter])
+        self.wb.save("sample.xlsx")
+

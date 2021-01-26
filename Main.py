@@ -28,7 +28,6 @@ class TrafficDRL():
             tensorboard_log="./DRL_tensorboard/"
         )
         
-        self.episode_cnt = 0
         self.score_history = []
         self.avg_wait_time_history = []
         self.value_loss_history = []
@@ -40,19 +39,20 @@ class TrafficDRL():
 
     def test(self):
         self.env.render()
-        obs = self.env.reset()
+        obs = self.env.reset(fixed_flow=[10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10])
         self.test_done = False
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            print(obs)
         self.env.render(close=True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     drl_app = TrafficDRL()
     drl_app.widget.show()
-    for i in range(100):
-        drl_app.train(episode_cnt=5)
-        drl_app.test()
+
+    drl_app.train(50)
+
+    print(drl_app.env.episode_cnt)
+
     os._exit(app.exec_())
