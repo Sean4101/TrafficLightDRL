@@ -21,11 +21,6 @@ ROAD_WIDTH = 12
 
 TRANSIT_TIME = 2
 SAFE_DIST = 7
-
-UNDERTIME_PER_SEC_PENALTY = 100
-UNDERTIME_BASE_PENALTY = 50
-OVERTIME_PER_SEC_PENALTY = 25
-OVERTIME_BASE_PENALTY = 50
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
 
@@ -336,7 +331,6 @@ class Traffic_signal():
 
     def initialize(self):
         self.light_timer = 0
-        self.signal_penalty = 0
         if self.master != None:
             self.master.slave = self
 
@@ -377,9 +371,6 @@ class Traffic_signal():
         og = 0 if self.signal == Signals.RED else 1
         changed = og != sig
         if changed:
-            if self.light_timer <= SIGNAL_MIN & self.signal == Signals.RED:
-                self.signal_penalty += UNDERTIME_PER_SEC_PENALTY*(SIGNAL_MIN - self.light_timer) + UNDERTIME_BASE_PENALTY
-            
             if self.light_timer >= 12:
                 self.light_timer = 0
                 if self.slave != None:

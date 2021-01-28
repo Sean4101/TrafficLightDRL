@@ -11,7 +11,6 @@ from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
 STATE_EACH_ROAD = 6
 FLOW_MIN = 0
 FLOW_MAX = 20
-CAR_ENTER_PENALTY = 1000
 
 UPDATE_DUR = 0.1
 
@@ -67,8 +66,6 @@ class TrafficDRL_Env(gym.Env):
         self.makeAction(action)
         self.n_exit_cars = 0
         self.n_fail_enter = 0
-        self.signal_penalty = 0
-        #self.get_car_speed_std()
         for i in range(10):
             self.update() # update every object and sum up penalty
             if self.isRendering:
@@ -114,8 +111,7 @@ class TrafficDRL_Env(gym.Env):
 
         p1 = self.addPath([ao, ob])
         p2 = self.addPath([co, od])
-        
-        #self.n_action = (len(self.master_signals)* 2)
+
         self.n_action = len(self.master_signals)
         self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.signals)
 
@@ -141,8 +137,6 @@ class TrafficDRL_Env(gym.Env):
                 self.n_exit_cars += 1
         for sig in self.signals:
             sig.update()
-            self.signal_penalty += sig.signal_penalty
-            sig.signal_penalty = 0
 
     def get_car_speed_std(self):
         spd_list = []
@@ -176,7 +170,7 @@ class TrafficDRL_Env(gym.Env):
         return state
 
     def calculateReward(self):
-        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
+        reward = - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
         return reward
 
     def addIntersection(self, x : int, y : int, diam =20):

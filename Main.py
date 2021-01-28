@@ -52,6 +52,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     drl_app = TrafficDRL()
     drl_app.widget.show()
+    
+    drl_app.test()
     for i in range(100):
         drl_app.train(episode_cnt=5)
         drl_app.test()
