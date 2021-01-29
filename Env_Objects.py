@@ -156,6 +156,14 @@ class Road():
         countsum = self.car_count_minute[5*60-1]-self.car_count_minute[(5-minute)*60]
         return countsum/minute
 
+    def get_queue(self):
+        l = len(self.cars)
+        if l == 0:
+            return 0
+        for i, car in enumerate(self.cars):
+            if car.prev_speed > 5:
+                return i
+        return l
         
     def initialize(self):
         self.cars.clear()

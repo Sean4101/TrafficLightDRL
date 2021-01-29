@@ -8,7 +8,7 @@ from typing import List
 from gym import spaces
 from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
 
-STATE_EACH_ROAD = 6
+STATE_EACH_ROAD = 1
 FLOW_MIN = 0
 FLOW_MAX = 20
 
@@ -19,12 +19,6 @@ class TrafficDRL_Env(gym.Env):
         super(TrafficDRL_Env, self).__init__()
         
         self.buildEnv()
-
-        #self.action_space = spaces.Box(
-        #    low=0, 
-        #    high=1, 
-        #    shape=(self.n_action,), 
-        #    dtype=np.float32)
 
         self.action_space = spaces.MultiBinary(self.n_action)
 
@@ -40,18 +34,21 @@ class TrafficDRL_Env(gym.Env):
         self.isRendering = False
         self.scale = 1
 
-    def reset(self, fixed_flow=None, episode_len=3600):
+    def reset(self, fixed_flow=None, episode_len=3600, isTest=False):
+        self.isTest = isTest
         self.timer = 0
         self.episode_len = episode_len
         self.buildEnv()
 
         self.cars = []
+        self.prev_avg_wait = 0
         self.avg_waiting_time = 0
         self.tot_car_cnt = 0
 
         if fixed_flow == None:
             flows = np.random.randint(FLOW_MIN, high=FLOW_MAX, size=(len(self.paths)))
-            #flows = [10, 10, 10, 10]
+        else:
+            flows = fixed_flow
 
         for i, path in enumerate(self.paths):
             path.flow = flows[i]
@@ -75,6 +72,8 @@ class TrafficDRL_Env(gym.Env):
         reward = self.calculateReward()
         done = finished
         info = {}
+        if done:
+            print(self.avg_waiting_time)
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -95,22 +94,45 @@ class TrafficDRL_Env(gym.Env):
         self.cars = []
         self.master_signals = []
 
-        sig1 = self.addTrafficSignal(Signals.RED, True)
-        sig2 = self.addTrafficSignal(Signals.RED, master=sig1)
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+        s2m = self.addTrafficSignal(Signals.RED, True)
+        s2s = self.addTrafficSignal(Signals.RED, master=s2m)
+        s3m = self.addTrafficSignal(Signals.RED, True)
+        s3s = self.addTrafficSignal(Signals.RED, master=s3m)
+        s4m = self.addTrafficSignal(Signals.RED, True)
+        s4s = self.addTrafficSignal(Signals.RED, master=s4m)
 
-        o = self.addIntersection(0, 0)
-        a = self.addIntersection(200, 0)
-        b = self.addIntersection(-200, 0)
-        c = self.addIntersection(0, 200)
-        d = self.addIntersection(0, -200)
+        A = self.addIntersection(200, 0)
+        B = self.addIntersection(400, 0)
+        C = self.addIntersection(0, -200)
+        D = self.addIntersection(200, -200)
+        E = self.addIntersection(400, -200)
+        F = self.addIntersection(600, -200)
+        G = self.addIntersection(0, -400)
+        H = self.addIntersection(200, -400)
+        I = self.addIntersection(400, -400)
+        J = self.addIntersection(600, -400)
+        K = self.addIntersection(200, -600)
+        L = self.addIntersection(400, -600)
 
-        ao = self.addRoad(a, o, sig1)
-        ob = self.addRoad(o, b)
-        co = self.addRoad(c, o, sig2)
-        od = self.addRoad(o, d)
-
-        p1 = self.addPath([ao, ob])
-        p2 = self.addPath([co, od])
+        AD = self.addRoad(A, D, s1m)
+        DH = self.addRoad(D, H, s3m)
+        HK = self.addRoad(H, K)
+        BE = self.addRoad(B, E, s2m)
+        EI = self.addRoad(E, I, s4m)
+        IL = self.addRoad(I, L)
+        CD = self.addRoad(C, D, s1s)
+        DE = self.addRoad(D, E, s2s)
+        EF = self.addRoad(E, F)
+        GH = self.addRoad(G, H, s3s)
+        HI = self.addRoad(H, I, s4s)
+        IJ = self.addRoad(I, J)
+        
+        p1 = self.addPath([AD, DH, HK])
+        p2 = self.addPath([BE, EI, IL])
+        p3 = self.addPath([CD, DE, EF])
+        p4 = self.addPath([GH, HI, IJ])
 
         self.n_action = len(self.master_signals)
         self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.signals)
@@ -159,19 +181,25 @@ class TrafficDRL_Env(gym.Env):
     def calculateState(self):
         state = np.zeros((self.n_state), dtype=float)
         for i, road in enumerate(self.roads):
-            state[i*6+ 0] = road.get_car_density(1)
-            state[i*6+ 1] = road.get_mean_speed(1)
-            state[i*6+ 2] = road.get_trafficflow(1)
-            state[i*6+ 3] = road.get_car_density(5)
-            state[i*6+ 4] = road.get_mean_speed(5)
-            state[i*6+ 5] = road.get_trafficflow(5)
+            state[i*STATE_EACH_ROAD+ 0] = road.get_queue()
         for j, signal in enumerate(self.signals):
-            state[len(self.roads)*6 + j] = signal.light_timer if signal.signal == Signals.RED else 0
+            state[len(self.roads)*STATE_EACH_ROAD + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):
-        reward = - 10*self.avg_waiting_time - 5*self.get_car_speed_std() + 10*self.n_exit_cars - 100*self.n_fail_enter 
+        cur_avg_wait = self.get_cur_avg_wait()
+        reward = self.prev_avg_wait - cur_avg_wait
+        self.prev_avg_wait = cur_avg_wait
         return reward
+
+    def get_cur_avg_wait(self):
+        l = len(self.cars)
+        if l == 0:
+            return 0
+        sum = 0
+        for car in self.cars:
+            sum += (self.timer - car.start_time)
+        return sum/l
 
     def addIntersection(self, x : int, y : int, diam =20):
         add = Intersection(x, -y, diam)
