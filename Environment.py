@@ -7,11 +7,10 @@ from PyQt5.QtWidgets import QApplication
 from typing import List
 from gym import spaces
 from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
-from Env_Objects import lane_, CAR_HEIGHT
-STATE_EACH_ROAD = 6
+
+STATE_EACH_ROAD = 1
 FLOW_MIN = 0
 FLOW_MAX = 20
-CAR_ENTER_PENALTY = 1000
 
 UPDATE_DUR = 0.1
 
@@ -20,12 +19,6 @@ class TrafficDRL_Env(gym.Env):
         super(TrafficDRL_Env, self).__init__()
         
         self.buildEnv()
-
-        #self.action_space = spaces.Box(
-        #    low=0, 
-        #    high=1, 
-        #    shape=(self.n_action,), 
-        #    dtype=np.float32)
 
         self.action_space = spaces.MultiBinary(self.n_action)
 
@@ -41,18 +34,23 @@ class TrafficDRL_Env(gym.Env):
         self.isRendering = False
         self.scale = 1
 
-    def reset(self, fixed_flow=None, episode_len=3600):
+    def reset(self, fixed_flow=None, episode_len=3600, isTest=False):
+        self.isTest = isTest
         self.timer = 0
         self.episode_len = episode_len
         self.buildEnv()
 
         self.cars = []
+        self.prev_avg_wait = 0
         self.avg_waiting_time = 0
         self.tot_car_cnt = 0
+        self.tot_progress = 1
+        self.prev_tot_progress = 1
 
         if fixed_flow == None:
             flows = np.random.randint(FLOW_MIN, high=FLOW_MAX, size=(len(self.paths)))
-            #flows = [10, 10, 10, 10]
+        else:
+            flows = fixed_flow
 
         for i, path in enumerate(self.paths):
             path.flow = flows[i]
@@ -67,8 +65,6 @@ class TrafficDRL_Env(gym.Env):
         self.makeAction(action)
         self.n_exit_cars = 0
         self.n_fail_enter = 0
-        self.signal_penalty = 0
-        #self.get_car_speed_std()
         for i in range(10):
             self.update() # update every object and sum up penalty
             if self.isRendering:
@@ -78,6 +74,8 @@ class TrafficDRL_Env(gym.Env):
         reward = self.calculateReward()
         done = finished
         info = {}
+        if done:
+            print(self.avg_waiting_time/self.tot_progress)
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -98,49 +96,488 @@ class TrafficDRL_Env(gym.Env):
         self.cars = []
         self.master_signals = []
 
-        sig1 = self.addTrafficSignal(Signals.RED, True)
-        sig2 = self.addTrafficSignal(Signals.RED, master=sig1)
+        # environment 1
+        # 1 intersection, 2 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
 
         o = self.addIntersection(0, 0)
-        a = self.addIntersection(500, 500)
+        a = self.addIntersection(200, 0)
         b = self.addIntersection(-200, 0)
         c = self.addIntersection(0, 200)
         d = self.addIntersection(0, -200)
 
-        ao = self.addRoad(lane_, False, a, o, sig1)
-        ob = self.addRoad(lane_, False, o, b)
-        co = self.addRoad(lane_, False, c, o, sig2)
-        od = self.addRoad(lane_, False, o, d)
+        ao = self.addRoad(a, o, s1m)
+        ob = self.addRoad(o, b)
+        co = self.addRoad(c, o, s1s)
+        od = self.addRoad(o, d)
+        p1 = self.addPath([ao, od])
+        p2 = self.addPath([co, ob])
+        '''
 
-        oa = self.addRoad(lane_, True, o, a)
-        bo = self.addRoad(lane_, True, b, o, sig1)
-        oc = self.addRoad(lane_, True, o, c)
-        do = self.addRoad(lane_, True, d, o, sig2)
+        # environment 2
+        # 1 intersection, 2 path
+        
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
 
+        o = self.addIntersection(0, 0)
+        a = self.addIntersection(200, 0)
+        b = self.addIntersection(-200, 0)
+        c = self.addIntersection(0, 200)
+        d = self.addIntersection(0, -200)
+
+        bo = self.addRoad(b, o, s1m)
+        oa = self.addRoad(o, a)
+        co = self.addRoad(c, o, s1s)
+        od = self.addRoad(o, d)
+
+        p1 = self.addPath([bo, oa])
+        p2 = self.addPath([co, od])
+        '''
+
+        # environment 3
+        # 1 intersection, 2 path
+        
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+
+        o = self.addIntersection(0, 0)
+        a = self.addIntersection(200, 0)
+        b = self.addIntersection(-200, 0)
+        c = self.addIntersection(0, 200)
+        d = self.addIntersection(0, -200
+        )
+        bo = self.addRoad(b, o)
+        ao = self.addRoad(a, o, s1s)
+        co = self.addRoad(c, o, s1m)
+        oa = self.addRoad(o, a)
+        oc = self.addRoad(o,c)
+        od = self.addRoad(o, d)
+
+        p1 = self.addPath([co, oa])
+        p2 = self.addPath([ao, oc])
+        '''
+
+        # environment 4
+        # 1 intersection, 4 path
+        
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+
+        o = self.addIntersection(0, 0)
+        a = self.addIntersection(200, 0)
+        b = self.addIntersection(-200, 0)
+        c = self.addIntersection(0, 200)
+        d = self.addIntersection(0, -200)
+
+        co = self.addRoad(c, o, s1m)
+        od = self.addRoad(o, d)
+        bo = self.addRoad(b, o, s1s)
+        oa = self.addRoad(o, a)
+        do = self.addRoad(d, o, s1m)
+        oc = self.addRoad(o, c)
+        ao = self.addRoad(a, o, s1s)
+        ob = self.addRoad(o, b)
+
+        p1 = self.addPath([bo, oa])
+        p2 = self.addPath([co, od])
+        p3 = self.addPath([do, oc])
+        p4 = self.addPath([ao, ob])
+        '''
+
+        # environment 5
+        # 1 intersection, 3 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+
+        o = self.addIntersection(0, 0)
+        a = self.addIntersection(200, 0)
+        b = self.addIntersection(-200, 0)
+        c = self.addIntersection(0, 200)
+        d = self.addIntersection(0, -200)
+
+        co = self.addRoad(c, o, s1m)
+        ao = self.addRoad(a, o, s1s)
+        do = self.addRoad(d, o, s1m)
+        ob = self.addRoad(o, b)
+
+        p1 = self.addPath([co, ob])
+        p2 = self.addPath([ao, ob])
+        p3 = self.addPath([do, ob])
+        '''
+
+        # environment 6
+        # 1 intersection, 12 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+
+        o = self.addIntersection(0, 0)
+        a = self.addIntersection(200, 0)
+        b = self.addIntersection(-200, 0)
+        c = self.addIntersection(0, 200)
+        d = self.addIntersection(0, -200)
+
+        ao = self.addRoad(a, o, s1m)
+        ob = self.addRoad(o, b)
+        co = self.addRoad(c, o, s1s)
+        od = self.addRoad(o, d)
+        oa = self.addRoad(o, a)
+        bo = self.addRoad(b, o, s1m)
+        oc = self.addRoad(o, c)
+        do = self.addRoad(d, o, s1s)
 
         p1 = self.addPath([ao, ob])
         p2 = self.addPath([ao, oc])
         p3 = self.addPath([ao, od])
-
         p4 = self.addPath([bo, oa])
         p5 = self.addPath([bo, oc])
         p6 = self.addPath([bo, od])
-
         p7 = self.addPath([co, oa])
         p8 = self.addPath([co, ob])
         p9 = self.addPath([co, od])
-
         p10 = self.addPath([do, oa])
         p11 = self.addPath([do, ob])
         p12 = self.addPath([do, oc])
-
-        '''p1 = self.addPath([ao, ob])
-        p2 = self.addPath([co, od])
-        p3 = self.addPath([ob, ao])
-        p4 = self.addPath([od, co])'''
+        '''
 
         
-        #self.n_action = (len(self.master_signals)* 2)
+        # environment 7
+        # 4 intersection, 4 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+        s2m = self.addTrafficSignal(Signals.RED, True)
+        s2s = self.addTrafficSignal(Signals.RED, master=s2m)
+        s3m = self.addTrafficSignal(Signals.RED, True)
+        s3s = self.addTrafficSignal(Signals.RED, master=s3m)
+        s4m = self.addTrafficSignal(Signals.RED, True)
+        s4s = self.addTrafficSignal(Signals.RED, master=s4m)
+
+        A = self.addIntersection(200, 0)
+        B = self.addIntersection(400, 0)
+        C = self.addIntersection(0, -200)
+        D = self.addIntersection(200, -200)
+        E = self.addIntersection(400, -200)
+        F = self.addIntersection(600, -200)
+        G = self.addIntersection(0, -400)
+        H = self.addIntersection(200, -400)
+        I = self.addIntersection(400, -400)
+        J = self.addIntersection(600, -400)
+        K = self.addIntersection(200, -600)
+        L = self.addIntersection(400, -600)
+
+        AD = self.addRoad(A, D, s1m)
+        DH = self.addRoad(D, H, s3m)
+        HK = self.addRoad(H, K)
+        BE = self.addRoad(B, E, s2m)
+        EI = self.addRoad(E, I, s4m)
+        IL = self.addRoad(I, L)
+        CD = self.addRoad(C, D, s1s)
+        DE = self.addRoad(D, E, s2s)
+        EF = self.addRoad(E, F)
+        GH = self.addRoad(G, H, s3s)
+        HI = self.addRoad(H, I, s4s)
+        IJ = self.addRoad(I, J)
+
+        p1 = self.addPath([AD, DH, HK])
+        p2 = self.addPath([BE, EI, IL])
+        p3 = self.addPath([CD, DE, EF])
+        p4 = self.addPath([GH, HI, IJ])
+        '''
+
+        # environment 8
+        # 4 intersection, 8 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+        s2m = self.addTrafficSignal(Signals.RED, True)
+        s2s = self.addTrafficSignal(Signals.RED, master=s2m)
+        s3m = self.addTrafficSignal(Signals.RED, True)
+        s3s = self.addTrafficSignal(Signals.RED, master=s3m)
+        s4m = self.addTrafficSignal(Signals.RED, True)
+        s4s = self.addTrafficSignal(Signals.RED, master=s4m)
+
+        A = self.addIntersection(200, 0)
+        B = self.addIntersection(400, 0)
+        C = self.addIntersection(0, -200)
+        D = self.addIntersection(200, -200)
+        E = self.addIntersection(400, -200)
+        F = self.addIntersection(600, -200)
+        G = self.addIntersection(0, -400)
+        H = self.addIntersection(200, -400)
+        I = self.addIntersection(400, -400)
+        J = self.addIntersection(600, -400)
+        K = self.addIntersection(200, -600)
+        L = self.addIntersection(400, -600)
+
+        AD = self.addRoad(A, D, s1m)
+        DH = self.addRoad(D, H, s3m)
+        HK = self.addRoad(H, K)
+        BE = self.addRoad(B, E, s2m)
+        EI = self.addRoad(E, I, s4m)
+        IL = self.addRoad(I, L)
+        CD = self.addRoad(C, D, s1s)
+        DE = self.addRoad(D, E, s2s)
+        EF = self.addRoad(E, F)
+        GH = self.addRoad(G, H, s3s)
+        HI = self.addRoad(H, I, s4s)
+        IJ = self.addRoad(I, J)
+        DA = self.addRoad(D, A)
+        HD = self.addRoad(H, D, s1m)
+        KH = self.addRoad(K, H, s3m)
+        EB = self.addRoad(E, B)
+        IE = self.addRoad(I, E, s2m)
+        LI = self.addRoad(L, I, s4m)
+        DC = self.addRoad(D, C)
+        ED = self.addRoad(E, D, s1s)
+        FE = self.addRoad(F, E, s2s)
+        HG = self.addRoad(H, G)
+        IH = self.addRoad(I, H, s3s)
+        JI = self.addRoad(J, I, s4s)
+
+        p1 = self.addPath([AD, DH, HK])
+        p2 = self.addPath([BE, EI, IL])
+        p3 = self.addPath([CD, DE, EF])
+        p4 = self.addPath([GH, HI, IJ])
+        p5 = self.addPath([KH, HD, DA])
+        p6 = self.addPath([LI, IE, EB])
+        p7 = self.addPath([FE, ED, DC])
+        p8 = self.addPath([JI, IH, HG])
+        '''
+        
+
+
+
+        # environment 9
+        # 4 intersection, 13 path
+        
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+        s2m = self.addTrafficSignal(Signals.RED, True)
+        s2s = self.addTrafficSignal(Signals.RED, master=s2m)
+        s3m = self.addTrafficSignal(Signals.RED, True)
+        s3s = self.addTrafficSignal(Signals.RED, master=s3m)
+        s4m = self.addTrafficSignal(Signals.RED, True)
+        s4s = self.addTrafficSignal(Signals.RED, master=s4m)
+        A = self.addIntersection(200, 0)
+        B = self.addIntersection(400, 0)
+        C = self.addIntersection(0, -200)
+        D = self.addIntersection(200, -200)
+        E = self.addIntersection(400, -200)
+        F = self.addIntersection(600, -200)
+        G = self.addIntersection(0, -400)
+        H = self.addIntersection(200, -400)
+        I = self.addIntersection(400, -400)
+        J = self.addIntersection(600, -400)
+        K = self.addIntersection(200, -600)
+        L = self.addIntersection(400, -600)
+        AD = self.addRoad(A, D, s1m)
+        DH = self.addRoad(D, H, s3m)
+        HK = self.addRoad(H, K)
+        BE = self.addRoad(B, E, s2m)
+        EI = self.addRoad(E, I, s4m)
+        IL = self.addRoad(I, L)
+        CD = self.addRoad(C, D, s1s)
+        DE = self.addRoad(D, E, s2s)
+        EF = self.addRoad(E, F)
+        GH = self.addRoad(G, H, s3s)
+        HI = self.addRoad(H, I, s4s)
+        IJ = self.addRoad(I, J)
+        DA = self.addRoad(D, A)
+        HD = self.addRoad(H, D, s1m)
+        KH = self.addRoad(K, H, s3m)
+        EB = self.addRoad(E, B)
+        IE = self.addRoad(I, E, s2m)
+        LI = self.addRoad(L, I, s4m)
+        DC = self.addRoad(D, C)
+        ED = self.addRoad(E, D, s1s)
+        FE = self.addRoad(F, E, s2s)
+        HG = self.addRoad(H, G)
+        IH = self.addRoad(I, H, s3s)
+        JI = self.addRoad(J, I, s4s)
+        p1 = self.addPath([AD, DC])
+        p2 = self.addPath([AD, DE, EB])
+        p3 = self.addPath([AD, DE, EF])
+        p4 = self.addPath([AD, DE, EI, IJ])
+        p5 = self.addPath([AD, DE, EI, IL])
+        p6 = self.addPath([AD, DE, EI, IH, HG])
+        p7 = self.addPath([AD, DE, EI, IH, HK])
+        p8 = self.addPath([AD, DH, HG])
+        p9 = self.addPath([AD, DH, HK])
+        p10 = self.addPath([AD, DH, HI, IJ])
+        p11 = self.addPath([AD, DH, HI, IL])
+        p12 = self.addPath([AD, DH, HI, IE, EB])
+        p13 = self.addPath([AD, DH, HI, EB, EF])
+        '''
+        
+        # environment 10
+        # 4 intersection, 104 path
+
+        '''
+        s1m = self.addTrafficSignal(Signals.RED, True)
+        s1s = self.addTrafficSignal(Signals.RED, master=s1m)
+        s2m = self.addTrafficSignal(Signals.RED, True)
+        s2s = self.addTrafficSignal(Signals.RED, master=s2m)
+        s3m = self.addTrafficSignal(Signals.RED, True)
+        s3s = self.addTrafficSignal(Signals.RED, master=s3m)
+        s4m = self.addTrafficSignal(Signals.RED, True)
+        s4s = self.addTrafficSignal(Signals.RED, master=s4m)
+        A = self.addIntersection(200, 0)
+        B = self.addIntersection(400, 0)
+        C = self.addIntersection(0, -200)
+        D = self.addIntersection(200, -200)
+        E = self.addIntersection(400, -200)
+        F = self.addIntersection(600, -200)
+        G = self.addIntersection(0, -400)
+        H = self.addIntersection(200, -400)
+        I = self.addIntersection(400, -400)
+        J = self.addIntersection(600, -400)
+        K = self.addIntersection(200, -600)
+        L = self.addIntersection(400, -600)
+        AD = self.addRoad(A, D, s1m)
+        DH = self.addRoad(D, H, s3m)
+        HK = self.addRoad(H, K)
+        BE = self.addRoad(B, E, s2m)
+        EI = self.addRoad(E, I, s4m)
+        IL = self.addRoad(I, L)
+        CD = self.addRoad(C, D, s1s)
+        DE = self.addRoad(D, E, s2s)
+        EF = self.addRoad(E, F)
+        GH = self.addRoad(G, H, s3s)
+        HI = self.addRoad(H, I, s4s)
+        IJ = self.addRoad(I, J)
+        DA = self.addRoad(D, A)
+        HD = self.addRoad(H, D, s1m)
+        KH = self.addRoad(K, H, s3m)
+        EB = self.addRoad(E, B)
+        IE = self.addRoad(I, E, s2m)
+        LI = self.addRoad(L, I, s4m)
+        DC = self.addRoad(D, C)
+        ED = self.addRoad(E, D, s1s)
+        FE = self.addRoad(F, E, s2s)
+        HG = self.addRoad(H, G)
+        IH = self.addRoad(I, H, s3s)
+        JI = self.addRoad(J, I, s4s)
+        p1 = self.addPath([AD, DC])
+        p2 = self.addPath([AD, DE, EB])
+        p3 = self.addPath([AD, DE, EF])
+        p4 = self.addPath([AD, DE, EI, IJ])
+        p5 = self.addPath([AD, DE, EI, IL])
+        p6 = self.addPath([AD, DE, EI, IH, HG])
+        p7 = self.addPath([AD, DE, EI, IH, HK])
+        p8 = self.addPath([AD, DH, HG])
+        p9 = self.addPath([AD, DH, HK])
+        p10 = self.addPath([AD, DH, HI, IJ])
+        p11 = self.addPath([AD, DH, HI, IL])
+        p12 = self.addPath([AD, DH, HI, IE, EB])
+        p13 = self.addPath([AD, DH, HI, EB, EF])
+        p14 = self.addPath([FE, EB])
+        p15 = self.addPath([FE, EI, IJ])
+        p16 = self.addPath([FE, EI, IL])
+        p17 = self.addPath([FE, EI, IH, HK])
+        p18 = self.addPath([FE, EI, IH, HG])
+        p19 = self.addPath([FE, EI, IH, HD, DA])
+        p20 = self.addPath([FE, EI, IH, HD, DC])
+        p21 = self.addPath([FE, ED, DA])
+        p22 = self.addPath([FE, ED, DC])
+        p23 = self.addPath([FE, ED, DH, HK])
+        p24 = self.addPath([FE, ED, DH, HG])
+        p25 = self.addPath([FE, ED, DH, HI, IJ])
+        p26 = self.addPath([FE, ED, DH, IJ, IL])
+        p27 = self.addPath([LI, IJ])
+        p28 = self.addPath([LI, IH, HK])
+        p29 = self.addPath([LI, IH, HG])
+        p30 = self.addPath([LI, IH, HD, DC])
+        p31 = self.addPath([LI, IH, HD, DA])
+        p32 = self.addPath([LI, IH, HD, DE, EF])
+        p33 = self.addPath([LI, IH, HD, DE, EB])
+        p34 = self.addPath([LI, IE, EF])
+        p35 = self.addPath([LI, IE, EB])
+        p36 = self.addPath([LI, IE, ED, DC])
+        p37 = self.addPath([LI, IE, ED, DA])
+        p38 = self.addPath([LI, IE, ED, DH, HK])
+        p39 = self.addPath([LI, IE, ED, HK, HG])
+        p40 = self.addPath([GH, HK])
+        p41 = self.addPath([GH, HD, DC])
+        p42 = self.addPath([GH, HD, DA])
+        p43 = self.addPath([GH, HD, DE, EB])
+        p44 = self.addPath([GH, HD, DE, EF])
+        p45 = self.addPath([GH, HD, DE, EI, IL])
+        p46 = self.addPath([GH, HD, DE, EI, IJ])
+        p47 = self.addPath([GH, HI, IL])
+        p48 = self.addPath([GH, HI, IJ])
+        p49 = self.addPath([GH, HI, IE, EB])
+        p50 = self.addPath([GH, HI, IE, EF])
+        p51 = self.addPath([GH, HI, IE, ED, DC])
+        p52 = self.addPath([GH, HI, IE, DC, DA])
+        p53 = self.addPath([BE, EF])
+        p54 = self.addPath([BE, ED, DA])
+        p55 = self.addPath([BE, ED, DC])
+        p56 = self.addPath([BE, ED, DH, HG])
+        p57 = self.addPath([BE, ED, DH, HK])
+        p58 = self.addPath([BE, ED, DH, HI, IJ])
+        p59 = self.addPath([BE, ED, DH, HI, IL])
+        p60 = self.addPath([BE, EI, IJ])
+        p61 = self.addPath([BE, EI, IL])
+        p62 = self.addPath([BE, EI, IH, HG])
+        p63 = self.addPath([BE, EI, IH, HK])
+        p64 = self.addPath([BE, EI, IH, HD, DA])
+        p65 = self.addPath([BE, EI, IH, DA, DC])
+        p66 = self.addPath([CD, DA])
+        p67 = self.addPath([CD, DH, HG])
+        p68 = self.addPath([CD, DH, HK])
+        p69 = self.addPath([CD, DH, HI, IL])
+        p70 = self.addPath([CD, DH, HI, IJ])
+        p71 = self.addPath([CD, DH, HI, IE, EB])
+        p72 = self.addPath([CD, DH, HI, IE, EF])
+        p73 = self.addPath([CD, DE, EB])
+        p74 = self.addPath([CD, DE, EF])
+        p75 = self.addPath([CD, DE, EI, IL])
+        p76 = self.addPath([CD, DE, EI, IJ])
+        p77 = self.addPath([CD, DE, EI, IH, HG])
+        p78 = self.addPath([CD, DE, EI, HG, HK])
+        p79 = self.addPath([KH, HG])
+        p80 = self.addPath([KH, HI, IL])
+        p81 = self.addPath([KH, HI, IJ])
+        p82 = self.addPath([KH, HI, IE, EF])
+        p83 = self.addPath([KH, HI, IE, EB])
+        p84 = self.addPath([KH, HI, IE, ED, DC])
+        p85 = self.addPath([KH, HI, IE, ED, DA])
+        p86 = self.addPath([KH, HD, DC])
+        p87 = self.addPath([KH, HD, DA])
+        p88 = self.addPath([KH, HD, DE, EF])
+        p89 = self.addPath([KH, HD, DE, EB])
+        p90 = self.addPath([KH, HD, DE, EI, IL])
+        p91 = self.addPath([KH, HD, DE, IL, IJ])
+        p92 = self.addPath([JI, IL])
+        p93 = self.addPath([JI, IE, EF])
+        p94 = self.addPath([JI, IE, EB])
+        p95 = self.addPath([JI, IE, ED, DA])
+        p96 = self.addPath([JI, IE, ED, DC])
+        p97 = self.addPath([JI, IE, ED, DH, HK])
+        p98 = self.addPath([JI, IE, ED, DH, HG])
+        p99 = self.addPath([JI, IH, HK])
+        p100 = self.addPath([JI, IH, HG])
+        p101 = self.addPath([JI, IH, HD, DA])
+        p102 = self.addPath([JI, IH, HD, DC])
+        p103 = self.addPath([JI, IH, HD, DE, EF])
+        p104 = self.addPath([JI, IH, HD, EF, EB])
+        '''
+
+
         self.n_action = len(self.master_signals)
         self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.signals)
 
@@ -151,11 +588,10 @@ class TrafficDRL_Env(gym.Env):
             rand = np.random.rand()
             prob = path.flow/10/60
             if rand < prob:
-                if path.roads[0].isAvailable() != 0:
-                    self.addCar(path.roads[0].isAvailable(), path, CAR_HEIGHT)
+                if path.roads[0].isAvailable():
+                    self.addCar(path)
                 else:
                     self.n_exit_cars += 1
-
         for road in self.roads:
             road.update()
         for index, car in enumerate(self.cars):
@@ -167,8 +603,6 @@ class TrafficDRL_Env(gym.Env):
                 self.n_exit_cars += 1
         for sig in self.signals:
             sig.update()
-            self.signal_penalty += sig.signal_penalty
-            sig.signal_penalty = 0
 
     def get_car_speed_std(self):
         spd_list = []
@@ -191,28 +625,35 @@ class TrafficDRL_Env(gym.Env):
     def calculateState(self):
         state = np.zeros((self.n_state), dtype=float)
         for i, road in enumerate(self.roads):
-            state[i*6+ 0] = road.get_car_density(1)
-            state[i*6+ 1] = road.get_mean_speed(1)
-            state[i*6+ 2] = road.get_trafficflow(1)
-            state[i*6+ 3] = road.get_car_density(5)
-            state[i*6+ 4] = road.get_mean_speed(5)
-            state[i*6+ 5] = road.get_trafficflow(5)
+            state[i*STATE_EACH_ROAD+ 0] = road.get_queue()
         for j, signal in enumerate(self.signals):
-            state[len(self.roads)*6 + j] = signal.red_light_timer
+            state[len(self.roads)*STATE_EACH_ROAD + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):
-        reward = 10*self.signal_penalty - 10*self.avg_waiting_time - 5*self.get_car_speed_std() # + 10*self.n_exit_cars - 100*self.n_fail_enter - 
+        cur_avg_wait = self.get_cur_avg_wait()
+        reward = self.prev_avg_wait/self.prev_tot_progress - cur_avg_wait/self.tot_progress
+        self.prev_avg_wait = cur_avg_wait
+        self.prev_tot_progress = self.tot_progress
         return reward
+
+    def get_cur_avg_wait(self):
+        l = len(self.cars)
+        if l == 0:
+            return 0
+        sum = 0
+        for car in self.cars:
+            sum += (self.timer - car.start_time)
+        return sum/l
 
     def addIntersection(self, x : int, y : int, diam =20):
         add = Intersection(x, -y, diam)
         self.intersections.append(add)
         return add
 
-    def addRoad(self, lane : int, op : bool, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
+    def addRoad(self, start : Intersection, end : Intersection, traffic_signal=None, spdLim : float = 60):
         lim = spdLim/3600*1000
-        add = Road(self, lane, op, start, end, lim, traffic_signal=traffic_signal)
+        add = Road(self, start, end, lim, traffic_signal=traffic_signal)
         add.number = len(self.roads)
         self.roads.append(add)
         return add
@@ -229,8 +670,8 @@ class TrafficDRL_Env(gym.Env):
         self.signals.append(add)
         return add
 
-    def addCar(self, lane : int, path : Path, height : int, maxSpd=20.0):
-        add = Car(self,lane, path, height, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
+    def addCar(self, path : Path, maxSpd=20.0):
+        add = Car(self, path, update_dur=UPDATE_DUR, maxSpd=maxSpd, scene=self.render_scene)
         self.cars.append(add)
         return add
 

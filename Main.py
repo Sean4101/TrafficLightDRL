@@ -18,10 +18,13 @@ class TrafficDRL():
             render_scene=self.widget.viewTab.scene
         )
 
+        self.n_steps = 1800
+
         self.model = PPO(
             MlpPolicyPPO,
             self.env,
             verbose=1,
+            n_steps=self.n_steps,
             learning_rate=1e-3,
             gamma=1-1e-5,
             ent_coef=1e-2,
@@ -36,24 +39,45 @@ class TrafficDRL():
         self.actor_loss_history = []
 
     def train(self, episode_cnt=10):
-        self.model.learn(self.env.step_per_epi*episode_cnt, log_interval=1)
+        self.model.learn(self.n_steps*episode_cnt, log_interval=1)
 
-    def test(self):
+    def test(self, flow=None):
         self.env.render()
-        obs = self.env.reset()
+        obs = self.env.reset(flow, isTest=True)
         self.test_done = False
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            #print(obs)
         self.env.render(close=True)
+
+test_flow_sets = [[10, 10, 10, 10],
+                  [15, 15, 5, 5],
+                  [15, 5, 15, 5],
+                  [5, 5, 15, 15],
+                  [15, 5, 5, 15],
+                  [20, 20, 5, 5],
+                  [20, 20, 20, 20]]
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     drl_app = TrafficDRL()
     drl_app.widget.show()
-    for i in range(100):
-        drl_app.test()
-        drl_app.train(episode_cnt=5)
-        drl_app.test()
+
+    # For Traning
+    
+    drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/road/environment 10/m0')
+    for i in range(10):
+        drl_app.train(10)
+        drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/road/environment 10/m' + str(i+1))
+    
+
+    # For Testing
+    '''
+    drl_app.model.set_env(drl_app.env)
+    for j, flow_set in enumerate(test_flow_sets):
+        print("testing flow set "+str(j))
+        for i in range(10+1):
+            drl_app.model = PPO.load('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/m' + str(i))
+            drl_app.test(flow_set)
+    '''
     os._exit(app.exec_())
