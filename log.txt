@@ -1,0 +1,8 @@
+takes too much time:
+    env too complicated
+    too many training episodes
+
+training was bad:
+    explained variance too low ->
+        state not correlated to reward
+        reward func need to change
