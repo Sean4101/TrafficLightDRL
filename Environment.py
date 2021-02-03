@@ -1,6 +1,7 @@
 import numpy as np
 import gym
 import statistics
+import time
 
 from PyQt5.QtWidgets import QApplication
 
@@ -8,14 +9,14 @@ from typing import List
 from gym import spaces
 from Env_Objects import Intersection, Road, Path, Car, Traffic_signal, Signals
 
-STATE_EACH_ROAD = 1
+STATE_EACH_ROAD = 2
 FLOW_MIN = 0
 FLOW_MAX = 20
 
 UPDATE_DUR = 0.1
 
 class TrafficDRL_Env(gym.Env):
-    def __init__(self, render_scene=None):
+    def __init__(self, render_scene=None, n_steps=3600):
         super(TrafficDRL_Env, self).__init__()
         
         self.buildEnv()
@@ -27,17 +28,16 @@ class TrafficDRL_Env(gym.Env):
             high=255,
             shape=(self.n_state,),
             dtype=np.float32)
-        
-        self.step_per_epi = 3600
 
         self.render_scene = render_scene
+        self.n_steps = n_steps
         self.isRendering = False
         self.scale = 1
 
-    def reset(self, fixed_flow=None, episode_len=3600, isTest=False):
+    def reset(self, fixed_flow=None, isTest=False):
         self.isTest = isTest
         self.timer = 0
-        self.episode_len = episode_len
+        self.episode_len = self.n_steps
         self.buildEnv()
 
         self.cars = []
@@ -65,6 +65,7 @@ class TrafficDRL_Env(gym.Env):
         self.n_fail_enter = 0
         for i in range(10):
             self.update() # update every object and sum up penalty
+            time.sleep(0.01)
             if self.isRendering:
                 self.update_render()
         finished = self.timer>=self.episode_len
@@ -135,7 +136,7 @@ class TrafficDRL_Env(gym.Env):
         p4 = self.addPath([GH, HI, IJ])
 
         self.n_action = len(self.master_signals)
-        self.n_state = len(self.roads)* STATE_EACH_ROAD + len(self.signals)
+        self.n_state = len(self.roads)* STATE_EACH_ROAD # + len(self.signals)
 
     def update(self):
         ''' Update the environment.'''
@@ -182,8 +183,9 @@ class TrafficDRL_Env(gym.Env):
         state = np.zeros((self.n_state), dtype=float)
         for i, road in enumerate(self.roads):
             state[i*STATE_EACH_ROAD+ 0] = road.get_queue()
-        for j, signal in enumerate(self.signals):
-            state[len(self.roads)*STATE_EACH_ROAD + j] = signal.light_timer if signal.signal == Signals.RED else 0
+            state[i*STATE_EACH_ROAD+ 1] = len(road.cars)
+        #for j, signal in enumerate(self.signals):
+        #    state[len(self.roads)*STATE_EACH_ROAD + j] = signal.light_timer if signal.signal == Signals.RED else 0
         return state
 
     def calculateReward(self):

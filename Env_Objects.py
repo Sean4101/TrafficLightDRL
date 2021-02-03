@@ -10,8 +10,8 @@ from typing import List
 
 UPDATE_DUR = 0.1
 
-CAR_WIDTH = 2
-CAR_HEIGHT = 3
+CAR_WIDTH = 3
+CAR_HEIGHT = 5
 
 TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
@@ -20,7 +20,7 @@ INTERSECTION_DIAM = 20
 ROAD_WIDTH = 12
 
 TRANSIT_TIME = 2
-SAFE_DIST = 7
+SAFE_DIST = 10
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
 
@@ -123,7 +123,7 @@ class Road():
         if self.env.timer % 1 == 0:
             self.car_count_minute.append(self.car_tot_count)
             self.trafficflow = (self.car_tot_count - self.car_count_minute[0])
-            self.car_density.append(len(self.cars)/self.len*ROAD_WIDTH)
+            self.car_density.append(len(self.cars))
             self.car_speed.append(self.speed())
             if len(self.car_count_minute) > 300:
                 self.car_count_minute.pop(0)
@@ -170,7 +170,7 @@ class Road():
 
     def isAvailable(self):
         if len(self.cars) >= 1:
-            if self.cars[len(self.cars)-1].progress < SAFE_DIST/2:
+            if self.cars[len(self.cars)-1].progress < SAFE_DIST + CAR_HEIGHT/2:
                 return False
         return True
 
@@ -296,7 +296,7 @@ class Car():
             front_car = self.road.cars[idx - 1]
             front_spd = front_car.prev_speed
             front_dist = front_car.prev_progress - self.progress
-            spd = front_dist + front_spd * self.update_dur - SAFE_DIST
+            spd = front_dist + front_spd * self.update_dur - SAFE_DIST - CAR_HEIGHT
             if spd > self.maxSpd:
                 spd = self.maxSpd
             elif spd < 0:

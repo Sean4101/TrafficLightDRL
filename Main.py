@@ -8,26 +8,32 @@ from Render_Widget import mainWidget
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.sac import MlpPolicy as MlpPolicySAC
 from stable_baselines3.ppo import MlpPolicy as MlpPolicyPPO
+from stable_baselines3.common.callbacks import CheckpointCallback
 from PyQt5.QtWidgets import QApplication
 
 class TrafficDRL():
     def __init__(self):
         self.widget = mainWidget()
 
+        self.n_steps = 3600
+        self.n_episode_per_callback = 200
+        self.save_path = './a_logs/'
+
         self.env = TrafficDRL_Env(
-            render_scene=self.widget.viewTab.scene
+            render_scene=self.widget.viewTab.scene,
+            n_steps=self.n_steps
         )
 
-        self.n_steps = 1800
+        self.checkpoint_callback = CheckpointCallback(save_freq=self.n_steps*self.n_episode_per_callback, save_path=self.save_path,
+                                         name_prefix='a_')
 
         self.model = PPO(
             MlpPolicyPPO,
             self.env,
             verbose=1,
             n_steps=self.n_steps,
-            learning_rate=1e-3,
+            learning_rate=3e-3,
             gamma=1-1e-5,
-            ent_coef=1e-2,
             tensorboard_log="./DRL_tensorboard/"
         )
         
@@ -38,9 +44,6 @@ class TrafficDRL():
         self.critic_loss_history = []
         self.actor_loss_history = []
 
-    def train(self, episode_cnt=10):
-        self.model.learn(self.n_steps*episode_cnt, log_interval=1)
-
     def test(self, flow=None):
         self.env.render()
         obs = self.env.reset(flow, isTest=True)
@@ -48,6 +51,7 @@ class TrafficDRL():
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
+            print(action)
         self.env.render(close=True)
 
 test_flow_sets = [[10, 10, 10, 10],
@@ -63,21 +67,20 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
 
-    # For Traning
+    # For
+    
+    #drl_app.model = PPO.load('C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/a20')
+    #drl_app.model.set_env(drl_app.env)
     '''
-    drl_app.model.save('C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/m0')
-    for i in range(10):
-        drl_app.train(10)
-        drl_app.model.save('C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/m' + str(i+1))
+    drl_app.model.save(drl_app.save_path+'/a__0_steps')
+    drl_app.model.learn(5000*drl_app.n_steps, drl_app.checkpoint_callback)
     '''
 
     # For Testing
-    '''
+    
     drl_app.model.set_env(drl_app.env)
-    for j, flow_set in enumerate(test_flow_sets):
-        print("testing flow set "+str(j))
-        for i in range(10+1):
-            drl_app.model = PPO.load('C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/m' + str(i))
-            drl_app.test(flow_set)
-    '''
+    model = '/a__12240000_steps.zip'
+    drl_app.model = PPO.load(drl_app.save_path + str(model))
+    drl_app.test(flow=test_flow_sets[5])
+    
     os._exit(app.exec_())
