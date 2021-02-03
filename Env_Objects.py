@@ -252,6 +252,7 @@ class Car():
 
     def transit(self):
         if self.progress >= self.road.len:
+            self.env.tot_progress += self.progress
             self.in_intersection = True
             self.progress = 0
             self.road.cars.remove(self)

@@ -44,6 +44,8 @@ class TrafficDRL_Env(gym.Env):
         self.prev_avg_wait = 0
         self.avg_waiting_time = 0
         self.tot_car_cnt = 0
+        self.tot_progress = 1
+        self.prev_tot_progress = 1
 
         if fixed_flow == None:
             flows = np.random.randint(FLOW_MIN, high=FLOW_MAX, size=(len(self.paths)))
@@ -74,7 +76,7 @@ class TrafficDRL_Env(gym.Env):
         done = finished
         info = {}
         if done:
-            print(self.avg_waiting_time)
+            print(self.avg_waiting_time/self.tot_progress)
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -129,7 +131,7 @@ class TrafficDRL_Env(gym.Env):
         GH = self.addRoad(G, H, s3s)
         HI = self.addRoad(H, I, s4s)
         IJ = self.addRoad(I, J)
-        
+
         p1 = self.addPath([AD, DH, HK])
         p2 = self.addPath([BE, EI, IL])
         p3 = self.addPath([CD, DE, EF])
@@ -190,8 +192,9 @@ class TrafficDRL_Env(gym.Env):
 
     def calculateReward(self):
         cur_avg_wait = self.get_cur_avg_wait()
-        reward = self.prev_avg_wait - cur_avg_wait
+        reward = self.prev_avg_wait/self.prev_tot_progress - cur_avg_wait/self.tot_progress
         self.prev_avg_wait = cur_avg_wait
+        self.prev_tot_progress = self.tot_progress
         return reward
 
     def get_cur_avg_wait(self):

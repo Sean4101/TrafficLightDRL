@@ -91,4 +91,3 @@ if  __name__ == "__main__":
     widget = mainWidget()
     widget.show()
     os._exit(app.exec_())
-

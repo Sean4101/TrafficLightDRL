@@ -67,10 +67,7 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
 
-    # For
-    
-    #drl_app.model = PPO.load('C:/Users/seanc/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/a20')
-    #drl_app.model.set_env(drl_app.env)
+    # For Training
     '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(5000*drl_app.n_steps, drl_app.checkpoint_callback)
@@ -79,8 +76,8 @@ if __name__ == '__main__':
     # For Testing
     
     drl_app.model.set_env(drl_app.env)
-    model = '/a__12240000_steps.zip'
-    drl_app.model = PPO.load(drl_app.save_path + str(model))
+    #model = '/a__12240000_steps.zip'
+    #drl_app.model = PPO.load(drl_app.save_path + str(model))
     drl_app.test(flow=test_flow_sets[5])
     
     os._exit(app.exec_())
