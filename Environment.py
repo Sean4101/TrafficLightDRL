@@ -192,7 +192,7 @@ class TrafficDRL_Env(gym.Env):
 
     def calculateReward(self):
         cur_avg_wait = self.get_cur_avg_wait()
-        reward = self.prev_avg_wait/self.prev_tot_progress - cur_avg_wait/self.tot_progress
+        reward = self.prev_avg_wait - cur_avg_wait
         self.prev_avg_wait = cur_avg_wait
         self.prev_tot_progress = self.tot_progress
         return reward
