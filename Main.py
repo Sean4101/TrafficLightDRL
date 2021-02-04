@@ -97,21 +97,21 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
 
-
+    drl_app.env.render()
     # For Training
     '''
-    drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane/environment 1/m0')
+    drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane (1)/environment 10/m0')
     for i in range(10):
         drl_app.train(10)
-        drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane/environment 1/m' + str(i+1))
+        drl_app.model.save('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane (1)/environment 10/m' + str(i+1))
     '''
 
     # For Testing
     '''
     drl_app.model.set_env(drl_app.env)
     for i in range(1, 11):
-            drl_app.model = PPO.load('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane/environment 1/m' + str(i))
-            for j, flow_set in enumerate(test_flow_sets_2):
+            drl_app.model = PPO.load('C:/Users/ASUS/Anaconda3/envs/MachineLearning/DRL_Project/TrafficSignalDRL/saved_models/lane (2)/environment 10/m' + str(i))
+            for j, flow_set in enumerate(test_flow_sets_104):
                 drl_app.test(flow_set)
     '''
 

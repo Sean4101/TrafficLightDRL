@@ -12,7 +12,7 @@ UPDATE_DUR = 0.1
 
 CAR_WIDTH = 2
 CAR_HEIGHT = 3
-lane = 2
+lane = 1
 
 TRAFFIC_SIGNAL_DIAM = 5
 TRAFFIC_SIGNAL_DIST = 20
@@ -216,7 +216,7 @@ class Lane():
         x2 = self.endx * scale
         y2 = self.endy * scale
 
-        road_w = ROAD_WIDTH * self.lanenum * scale
+        road_w = ROAD_WIDTH * (self.lanenum+1) * scale
 
         length = (math.sqrt((x2 - x1)**2 + (y2 - y1)**2) + road_w)
 
@@ -372,7 +372,7 @@ class Car():
             self.road = self.path.roads[self.stage]
             self.lane = self.road.bestLaneNum()
             if self.lane == -1:
-                self.lane = 1
+                self.lane = 0
             self.road.car_enter(self, self.lane)
             self.rot = self.road.rotd
 
