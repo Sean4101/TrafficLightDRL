@@ -16,10 +16,13 @@ FLOW_MAX = 20
 UPDATE_DUR = 0.1
 SEC_EACH_STEP = 3
 
+all_test_data = []
+each_test_data = []
 class TrafficDRL_Env(gym.Env):
     def __init__(self, render_scene=None, n_steps=3600/SEC_EACH_STEP):
         super(TrafficDRL_Env, self).__init__()
         
+
         self.buildEnv()
 
         self.action_space = spaces.MultiBinary(self.n_action)
@@ -79,10 +82,11 @@ class TrafficDRL_Env(gym.Env):
         info = {}
         if done:
             print(self.avg_waiting_time)
+            each_test_data.append(self.avg_waiting_time)
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
-        self.isRendering = not close
+        #self.isRendering = not close
         if close:
             self.clearCarItems()
 
