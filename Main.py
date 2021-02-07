@@ -112,11 +112,12 @@ if __name__ == '__main__':
             avg_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ws.append(["-"])
 
+    ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
     for data in all_avg_data:
         ws.append(data)
 
     c1 = openpyxl.chart.LineChart()
-    data = openpyxl.chart.Reference(ws, min_col=1, min_row=1+len(test_flow_sets)*(test_time+2), max_col=model_num, max_row=4+len(test_flow_sets)*(test_time+2)) 
+    data = openpyxl.chart.Reference(ws, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num, max_row=6+len(test_flow_sets)*(test_time+2)) 
     c1.add_data(data, titles_from_data=True)
     s1 = c1.series[0]
     s2 = c1.series[1]
