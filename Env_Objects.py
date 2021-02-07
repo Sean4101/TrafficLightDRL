@@ -23,6 +23,7 @@ TRANSIT_TIME = 2
 SAFE_DIST = 10
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
+SIGNAL_PENALTY = 10
 
 class Intersection():
     def __init__(self, xpos : float, ypos : float, diam : float):
@@ -339,17 +340,16 @@ class Traffic_signal():
         self.graphicsItem = None
 
     def initialize(self):
+        self.penalty = 0
         self.light_timer = 0
         if self.master != None:
             self.master.slave = self
 
     def update(self):
+        self.penalty = 0
         if self.isSlave:
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
         self.light_timer += UPDATE_DUR
-        if self.light_timer >= SIGNAL_MAX:
-            new_sig = Signals.RED if self.signal == Signals.GREEN else Signals.GREEN
-            self.change_signal(new_sig)
 
     def render(self, scene, scale):
         diam = TRAFFIC_SIGNAL_DIAM * scale
@@ -380,11 +380,12 @@ class Traffic_signal():
         og = 0 if self.signal == Signals.RED else 1
         changed = og != sig
         if changed:
-            if self.light_timer >= 12:
-                self.light_timer = 0
-                if self.slave != None:
-                    self.slave.light_timer = 0
-                self.signal = Signals.RED if sig == 0 else Signals.GREEN
+            if self.light_timer < SIGNAL_MIN:
+                self.penalty += SIGNAL_PENALTY
+            self.light_timer = 0
+            if self.slave != None:
+                self.slave.light_timer = 0
+            self.signal = Signals.RED if sig == 0 else Signals.GREEN
 
 class Signals(enum.IntEnum):
     RED = 0

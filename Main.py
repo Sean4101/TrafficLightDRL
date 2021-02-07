@@ -6,8 +6,7 @@ import numpy as np
 from Environment import TrafficDRL_Env
 from Render_Widget import mainWidget
 from stable_baselines3 import SAC, PPO
-from stable_baselines3.sac import MlpPolicy as MlpPolicySAC
-from stable_baselines3.ppo import MlpPolicy as MlpPolicyPPO
+from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3.common.callbacks import CheckpointCallback
 from PyQt5.QtWidgets import QApplication
 
@@ -15,8 +14,8 @@ class TrafficDRL():
     def __init__(self):
         self.widget = mainWidget()
 
-        self.n_steps = 3600
-        self.n_episode_per_callback = 200
+        self.n_steps = 1200
+        self.n_episode_per_callback = 20
         self.save_path = './a_logs/'
 
         self.env = TrafficDRL_Env(
@@ -28,12 +27,13 @@ class TrafficDRL():
                                          name_prefix='a_')
 
         self.model = PPO(
-            MlpPolicyPPO,
+            MlpPolicy,
             self.env,
             verbose=1,
             n_steps=self.n_steps,
-            learning_rate=3e-3,
-            gamma=1-1e-5,
+            learning_rate=3e-4,
+            ent_coef=0.5,
+            gamma=0.95,
             tensorboard_log="./DRL_tensorboard/"
         )
         
@@ -70,14 +70,15 @@ if __name__ == '__main__':
     # For Training
     '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
-    drl_app.model.learn(5000*drl_app.n_steps, drl_app.checkpoint_callback)
+    drl_app.model.learn(200*drl_app.n_steps, drl_app.checkpoint_callback)
     '''
 
     # For Testing
     
     drl_app.model.set_env(drl_app.env)
-    #model = '/a__12240000_steps.zip'
-    #drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=test_flow_sets[5])
+    model = '/a__240000_steps.zip'
+    drl_app.model = PPO.load(drl_app.save_path + str(model))
+    drl_app.test(flow=[10, 5])
+    
     
     os._exit(app.exec_())
