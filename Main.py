@@ -95,7 +95,7 @@ if __name__ == '__main__':
                 model = '/a__' + str(k*24000) + '_steps.zip'
                 drl_app.model = PPO.load(drl_app.save_path + str(model))
                 drl_app.test(flow=flows)
-                print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets)) , 4))+" %------")
+                print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets))*100 , 4))+" %------")
                 percentage += 1
     number = 2
     for i, data in enumerate(each_test_data):
