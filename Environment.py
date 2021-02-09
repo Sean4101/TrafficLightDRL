@@ -16,6 +16,8 @@ FLOW_MAX = 20
 UPDATE_DUR = 0.1
 SEC_EACH_STEP = 3
 
+all_test_data = []
+each_test_data = []
 class TrafficDRL_Env(gym.Env):
     def __init__(self, reward_function, env_sys, render_scene=None, n_steps=3600/SEC_EACH_STEP):
         super(TrafficDRL_Env, self).__init__()
@@ -47,6 +49,7 @@ class TrafficDRL_Env(gym.Env):
         self.cars = []
         self.prev_avg_stay = 0
         self.avg_staying_time = 0
+        self.avg_waiting_time = 0
         self.tot_car_cnt = 0
         self.tot_progress = 1
         self.prev_tot_progress = 1
@@ -81,7 +84,13 @@ class TrafficDRL_Env(gym.Env):
         done = finished
         info = {}
         if done:
-            print(self.avg_staying_time)
+            for car in self.cars:
+                self.avg_staying_time = (self.avg_staying_time*self.tot_car_cnt + (self.timer - car.start_time))/(self.tot_car_cnt+1)
+                self.avg_waiting_time = (self.avg_waiting_time*self.tot_car_cnt + car.tot_wait_time)/(self.tot_car_cnt+1)
+                self.tot_car_cnt += 1
+            print(self.avg_staying_time, end='\t')
+            print(self.avg_waiting_time)
+            each_test_data.append(self.avg_staying_time)
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
@@ -264,6 +273,7 @@ class TrafficDRL_Env(gym.Env):
             car.update()
             if car.done:
                 self.avg_staying_time = (self.avg_staying_time*self.tot_car_cnt + car.end_time)/(self.tot_car_cnt+1)
+                self.avg_waiting_time = (self.avg_waiting_time*self.tot_car_cnt + car.tot_wait_time)/(self.tot_car_cnt+1)
                 self.tot_car_cnt += 1
                 self.cars.pop(index)
                 self.n_exit_cars += 1

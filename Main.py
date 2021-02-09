@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import numpy as np
+import openpyxl
 
 from Environment import TrafficDRL_Env
 from Render_Widget import mainWidget
@@ -9,16 +10,18 @@ from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3.common.callbacks import CheckpointCallback
 from PyQt5.QtWidgets import QApplication
+from Environment import all_test_data, each_test_data
 
 class TrafficDRL():
     def __init__(self):
         self.widget = mainWidget()
 
         self.n_steps = 1200
-        self.n_train_episodes = 500
+        self.n_train_episodes = 1000
         self.n_episode_per_callback = 50
         self.save_path = './a_logs/'
-        rf = 0 # Option of 0 ~ 3, each represents different reward function.
+
+        rf = 2 # Option of 0 ~ 3, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
                # minus the traffic signal penalty.
                # (1): The negative of the total time of cars staying in the environment, 
@@ -28,7 +31,7 @@ class TrafficDRL():
                # (3): The negative of the total time of waiting in front of traffic signals, 
                # minus the traffic signal penalty.
 
-        env_sys = 3 # Option of 1 ~ 3, represents different environment scale.
+        env_sys = 2 # Option of 1 ~ 3, represents different environment scale.
                 # (1): 1 crossroads, 1 master signals, 2 paths. each has a length of 400 meters.
                 # (2): 4 crossroads, 4 master signals, 4 paths. each has a length of 600 meters.
                 # (3): 9 crossroads, 9 master signals, 6 paths. each has a length of 600 meters.
@@ -64,31 +67,89 @@ class TrafficDRL():
             print(reward)
         self.env.render(close=True)
 
-test_flow_sets = [[10, 10, 10, 10],
-                  [15, 15, 5, 5],
-                  [15, 5, 15, 5],
-                  [5, 5, 15, 15],
-                  [15, 5, 5, 15],
-                  [20, 20, 5, 5],
-                  [20, 20, 20, 20]]
+test_flow_sets = [[10, 10],
+                  [5, 15],
+                  [15, 5],
+                  [20, 20]]
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     drl_app = TrafficDRL()
     drl_app.widget.show()
-
+    
     # For Training
-    '''
+    
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
-    drl_app.model.learn(self.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    '''
+    drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
+    
 
     # For Testing
-    
+    '''
     drl_app.model.set_env(drl_app.env)
-    #model = '/a__0_steps.zip'
-    #drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=[5, 0, 0, 0, 10, 10])
+    model = '/a__120000_steps.zip'
+    drl_app.model = PPO.load(drl_app.save_path + str(model))
+    drl_app.test(flow=[10, 10, 10, 10, 10, 10])
+    '''
+
+    '''
+    model_num = 11
+    test_time = 5
+    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    all_avg_data = []
+    percentage = 1
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
     
-    
+    for i, flows in enumerate(test_flow_sets):
+        for j in range(test_time):
+            for k in range(model_num):
+                model = '/a__' + str(k*24000) + '_steps.zip'
+                drl_app.model = PPO.load(drl_app.save_path + str(model))
+                drl_app.test(flow=flows)
+                print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets))*100 , 4))+" %------")
+                percentage += 1
+    number = 2
+    for i, data in enumerate(each_test_data):
+        j = ((i+11)%11)+1
+        lists[j-1] = data
+        avg_list[j] += data
+
+        if (i+1)%11 == 0:
+            ws.append(lists)
+
+        if (i+1)%(11*test_time) == 0:
+            for i in range(1, 12):
+                avg_list[i]/=5
+            ws.append(avg_list)
+            all_avg_data.append(avg_list)
+            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ws.append(["-"])
+            number += 1
+
+    ws.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    for data in all_avg_data:
+        ws.append(data)
+
+    c1 = openpyxl.chart.LineChart()
+    data = openpyxl.chart.Reference(ws, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
+    c1.add_data(data, titles_from_data=True)
+    s1 = c1.series[0]
+    s2 = c1.series[1]
+    s3 = c1.series[2]
+    s4 = c1.series[3]
+    s5 = c1.series[4]
+    s6 = c1.series[5]
+    s7 = c1.series[6]
+    s8 = c1.series[7]
+    s9 = c1.series[8]
+    s10 = c1.series[9]
+    s11 = c1.series[10]
+
+    ws.add_chart(c1, "O1")
+    wb.save("sample1.xlsx")
+    print("finish")
+    '''
+
     os._exit(app.exec_())

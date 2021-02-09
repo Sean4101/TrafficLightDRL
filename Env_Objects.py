@@ -198,8 +198,9 @@ class Car():
         self.in_intersection = True
         self.transit_timer = 0
         self.start_time = self.env.timer
-        self.wait_start = -1
         self.end_time = 0
+        self.tot_wait_time = 0
+        self.cur_wait_time = 0
 
         self.prev_progress = 0.0
         self.progress = 0.0
@@ -221,6 +222,7 @@ class Car():
         if self.transit():
             return
         self.relative_safe_dist_drive()
+        self.check_wait()
         self.record()
         
     def render(self, scene, scale):
@@ -246,8 +248,7 @@ class Car():
         self.graphicsItem.setRotation(self.rot)
     
     def leave(self):
-        self.end_time = self.env.timer
-        self.end_time = self.end_time - self.start_time
+        self.end_time = self.env.timer - self.start_time
         self.done = True
         if self.scene != None and self.graphicsItem != None:
             self.scene.removeItem(self.graphicsItem)
@@ -323,16 +324,15 @@ class Car():
             del(self.carcount[0])
             self.carcount.append(delta)
 
-    def get_wait(self):
-        if self.wait_start == -1:
-            if self.speed < 5:
-                self.wait_start = self.env.timer
-            return 0
+    def check_wait(self):
+        if self.speed < 5:
+            self.tot_wait_time += UPDATE_DUR
+            self.cur_wait_time += UPDATE_DUR
         else:
-            if self.speed > 5:
-                self.wait_start = -1
-                return 0
-            return self.env.timer - self.wait_start
+            self.cur_wait_time = 0
+
+    def get_wait(self):
+        return self.cur_wait_time
             
 
 class Traffic_signal():
@@ -362,7 +362,7 @@ class Traffic_signal():
         if self.isSlave:
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
         elif self.light_timer >= SIGNAL_MAX:
-            self.penalty += 10
+            self.penalty += SIGNAL_PENALTY
         self.light_timer += UPDATE_DUR
 
     def render(self, scene, scale):
