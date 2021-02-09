@@ -23,7 +23,7 @@ TRANSIT_TIME = 2
 SAFE_DIST = 10
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
-SIGNAL_PENALTY = 10
+SIGNAL_PENALTY = 1000
 
 class Intersection():
     def __init__(self, xpos : float, ypos : float, diam : float):
@@ -198,6 +198,7 @@ class Car():
         self.in_intersection = True
         self.transit_timer = 0
         self.start_time = self.env.timer
+        self.wait_start = -1
         self.end_time = 0
 
         self.prev_progress = 0.0
@@ -314,7 +315,6 @@ class Car():
     def record(self):
         self.prev_speed = self.speed
         self.prev_progress = self.progress
-
     
     def car_two_timing_delta(self):
         delta = self.carcountnum2 - self.carcountnum1
@@ -322,6 +322,18 @@ class Car():
         if len(self.carcount) == 60:
             del(self.carcount[0])
             self.carcount.append(delta)
+
+    def get_wait(self):
+        if self.wait_start == -1:
+            if self.speed < 5:
+                self.wait_start = self.env.timer
+            return 0
+        else:
+            if self.speed > 5:
+                self.wait_start = -1
+                return 0
+            return self.env.timer - self.wait_start
+            
 
 class Traffic_signal():
     def __init__(self, def_signal, master=None):
@@ -349,6 +361,8 @@ class Traffic_signal():
         self.penalty = 0
         if self.isSlave:
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
+        elif self.light_timer >= SIGNAL_MAX:
+            self.penalty += 10
         self.light_timer += UPDATE_DUR
 
     def render(self, scene, scale):
