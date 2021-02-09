@@ -363,6 +363,8 @@ class Traffic_signal():
             self.signal = Signals.RED if self.master.signal == Signals.GREEN else Signals.GREEN
         elif self.light_timer >= SIGNAL_MAX:
             self.penalty += SIGNAL_PENALTY
+            self.signal = Signals.RED if self.signal == Signals.GREEN else Signals.GREEN
+            self.light_timer = 0
         self.light_timer += UPDATE_DUR
 
     def render(self, scene, scale):

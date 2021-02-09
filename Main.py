@@ -78,18 +78,18 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    
+    '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    
+    '''
 
     # For Testing
-    '''
+    
     drl_app.model.set_env(drl_app.env)
     model = '/a__120000_steps.zip'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
     drl_app.test(flow=[10, 10, 10, 10, 10, 10])
-    '''
+    
 
     '''
     model_num = 11
