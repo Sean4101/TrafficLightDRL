@@ -83,7 +83,7 @@ if __name__ == '__main__':
     avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     all_avg_data = []
-    percentage = 0
+    percentage = 1
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
