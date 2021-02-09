@@ -10,7 +10,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy
 from stable_baselines3.common.callbacks import CheckpointCallback
 from PyQt5.QtWidgets import QApplication
-from Environment import all_test_data, each_test_data
+from Environment import  all_stay_data, all_wait_data
+
 
 class TrafficDRL():
     def __init__(self):
@@ -78,19 +79,19 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    
+    '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    
+    '''
 
     # For Testing
-    '''
+    
     drl_app.model.set_env(drl_app.env)
     model = '/a__120000_steps.zip'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
     drl_app.test(flow=[10, 10, 10, 10, 10, 10])
-    '''
-
+    
+    #excel for stay
     '''
     model_num = 11
     test_time = 5
@@ -98,9 +99,9 @@ if __name__ == '__main__':
     lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     all_avg_data = []
     percentage = 1
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    wb1 = openpyxl.Workbook()
+    ws1 = wb1.active
+    ws1.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
     
     for i, flows in enumerate(test_flow_sets):
         for j in range(test_time):
@@ -111,29 +112,29 @@ if __name__ == '__main__':
                 print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets))*100 , 4))+" %------")
                 percentage += 1
     number = 2
-    for i, data in enumerate(each_test_data):
+    for i, data in enumerate(all_stay_data):
         j = ((i+11)%11)+1
         lists[j-1] = data
         avg_list[j] += data
 
         if (i+1)%11 == 0:
-            ws.append(lists)
+            ws1.append(lists)
 
         if (i+1)%(11*test_time) == 0:
             for i in range(1, 12):
                 avg_list[i]/=5
-            ws.append(avg_list)
+            ws1.append(avg_list)
             all_avg_data.append(avg_list)
             avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-            ws.append(["-"])
+            ws1.append(["-"])
             number += 1
 
-    ws.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws1.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
     for data in all_avg_data:
-        ws.append(data)
+        ws1.append(data)
 
     c1 = openpyxl.chart.LineChart()
-    data = openpyxl.chart.Reference(ws, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
+    data = openpyxl.chart.Reference(ws1, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
     c1.add_data(data, titles_from_data=True)
     s1 = c1.series[0]
     s2 = c1.series[1]
@@ -147,9 +148,60 @@ if __name__ == '__main__':
     s10 = c1.series[9]
     s11 = c1.series[10]
 
-    ws.add_chart(c1, "O1")
+    ws1.add_chart(c1, "O1")
     wb.save("sample1.xlsx")
-    print("finish")
-    '''
+    #print("finish")
+    
 
+    #excel for wait
+    model_num = 11
+    test_time = 5
+    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    all_avg_data = []
+    percentage = 1
+    wb2 = openpyxl.Workbook()
+    ws2 = wb2.active
+    ws2.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+
+    number = 2
+    for i, data in enumerate(all_wait_data):
+        j = ((i+11)%11)+1
+        lists[j-1] = data
+        avg_list[j] += data
+
+        if (i+1)%11 == 0:
+            ws2.append(lists)
+
+        if (i+1)%(11*test_time) == 0:
+            for i in range(1, 12):
+                avg_list[i]/=5
+            ws2.append(avg_list)
+            all_avg_data.append(avg_list)
+            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            ws2.append(["-"])
+            number += 1
+
+    ws2.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    for data in all_avg_data:
+        ws2.append(data)
+
+    c1 = openpyxl.chart.LineChart()
+    data = openpyxl.chart.Reference(ws2, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
+    c1.add_data(data, titles_from_data=True)
+    s1 = c1.series[0]
+    s2 = c1.series[1]
+    s3 = c1.series[2]
+    s4 = c1.series[3]
+    s5 = c1.series[4]
+    s6 = c1.series[5]
+    s7 = c1.series[6]
+    s8 = c1.series[7]
+    s9 = c1.series[8]
+    s10 = c1.series[9]
+    s11 = c1.series[10]
+
+    ws2.add_chart(c1, "O1")
+    wb.save("sample2.xlsx")
+    '''
     os._exit(app.exec_())

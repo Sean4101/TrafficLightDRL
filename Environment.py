@@ -18,6 +18,10 @@ SEC_EACH_STEP = 3
 
 all_test_data = []
 each_test_data = []
+
+all_stay_data = []
+all_wait_data = []
+
 class TrafficDRL_Env(gym.Env):
     def __init__(self, reward_function, env_sys, render_scene=None, n_steps=3600/SEC_EACH_STEP):
         super(TrafficDRL_Env, self).__init__()
@@ -90,7 +94,9 @@ class TrafficDRL_Env(gym.Env):
                 self.tot_car_cnt += 1
             print(self.avg_staying_time, end='\t')
             print(self.avg_waiting_time)
-            each_test_data.append(self.avg_staying_time)
+            all_stay_data.append(self.avg_staying_time)
+            all_wait_data.append(self.avg_waiting_time)
+
         return state_, reward, done, info
 
     def render(self, mode='human', close=False):
