@@ -77,13 +77,13 @@ if __name__ == '__main__':
     '''
 
     # For Testing
-    '''
+    
     model_num = 11
     test_time = 5
-    avg_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     all_avg_data = []
-    
+    percentage = 0
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
@@ -95,29 +95,32 @@ if __name__ == '__main__':
                 model = '/a__' + str(k*24000) + '_steps.zip'
                 drl_app.model = PPO.load(drl_app.save_path + str(model))
                 drl_app.test(flow=flows)
-
+                print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets)) , 4))+" %------")
+                percentage += 1
+    number = 2
     for i, data in enumerate(each_test_data):
-        j = (i+12)%11
+        j = ((i+11)%11)+1
         lists[j-1] = data
-        avg_list[j-1] += data
+        avg_list[j] += data
 
         if (i+1)%11 == 0:
             ws.append(lists)
 
         if (i+1)%(11*test_time) == 0:
-            for i in range(11):
+            for i in range(1, 12):
                 avg_list[i]/=5
             ws.append(avg_list)
             all_avg_data.append(avg_list)
-            avg_list = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ws.append(["-"])
+            number += 1
 
-    ws.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
     for data in all_avg_data:
         ws.append(data)
 
     c1 = openpyxl.chart.LineChart()
-    data = openpyxl.chart.Reference(ws, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num, max_row=6+len(test_flow_sets)*(test_time+2)) 
+    data = openpyxl.chart.Reference(ws, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
     c1.add_data(data, titles_from_data=True)
     s1 = c1.series[0]
     s2 = c1.series[1]
@@ -134,6 +137,6 @@ if __name__ == '__main__':
     ws.add_chart(c1, "O1")
     wb.save("sample1.xlsx")
     print("finish")
-    '''
+    
 
     os._exit(app.exec_())
