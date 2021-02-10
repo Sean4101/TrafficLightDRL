@@ -18,9 +18,9 @@ class TrafficDRL():
         self.widget = mainWidget()
 
         self.n_steps = 1200
-        self.n_train_episodes = 1000
-        self.n_episode_per_callback = 50
-        self.save_path = './h_logs/'
+        self.n_train_episodes = 1000 # change to 3000 if es=2
+        self.n_episode_per_callback = 50 # change to 150 if es=2
+        self.save_path = './models/rf6/es1/models_pen=10/'
 
         rf = 6 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
@@ -80,18 +80,18 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    
+    '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    
+    '''
 
     # For Testing
-    '''
+    
     drl_app.model.set_env(drl_app.env)
     model = '/a__1200000_steps.zip'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=[10, 0, 10, 11, 10, 10])
-    '''
+    drl_app.test(flow=[0, 20, 10, 11, 10, 10])
+    
     
     #excel for stay
     '''

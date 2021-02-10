@@ -23,7 +23,7 @@ TRANSIT_TIME = 2
 SAFE_DIST = 10
 SIGNAL_MIN = 12
 SIGNAL_MAX = 120
-SIGNAL_PENALTY = 1000
+SIGNAL_PENALTY = 10
 
 class Intersection():
     def __init__(self, xpos : float, ypos : float, diam : float):
