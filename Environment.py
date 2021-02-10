@@ -58,6 +58,11 @@ class TrafficDRL_Env(gym.Env):
         self.tot_progress = 1
         self.prev_tot_progress = 1
 
+        self.last_avg_stay = 0
+        self.last_tot_stay = 0
+        self.last_avg_wait = 0
+        self.last_tot_wait = 0
+
         self.n_exit_cars = 0
         self.signal_penalty = 0
 
@@ -119,7 +124,7 @@ class TrafficDRL_Env(gym.Env):
         
         if self.env_sys == 1:
             s1m = self.addTrafficSignal(Signals.RED, True)
-            s1s = self.addTrafficSignal(Signals.RED, master=sm)
+            s1s = self.addTrafficSignal(Signals.RED, master=s1m)
 
             A = self.addIntersection(200, 0)
             B = self.addIntersection(0, -200)
@@ -324,6 +329,26 @@ class TrafficDRL_Env(gym.Env):
             return -self.get_cur_avg_wait() - self.signal_penalty
         elif self.reward_function == 3:
             return -self.get_cur_tot_wait() - self.signal_penalty
+        elif self.reward_function == 4:
+            cur_avg_stay = self.get_cur_avg_stay()
+            delta = cur_avg_stay - self.last_avg_stay
+            self.last_avg_stay = cur_avg_stay
+            return -delta - self.signal_penalty
+        elif self.reward_function == 5:
+            cur_tot_stay = self.get_cur_tot_stay()
+            delta = cur_tot_stay - self.last_tot_stay
+            self.last_tot_stay = cur_tot_stay
+            return -delta - self.signal_penalty
+        elif self.reward_function == 6:
+            cur_avg_wait = self.get_cur_avg_wait()
+            delta = cur_avg_wait - self.last_avg_wait
+            self.last_avg_wait = cur_avg_wait
+            return -delta - self.signal_penalty
+        elif self.reward_function == 7:
+            cur_tot_wait = self.get_cur_tot_wait()
+            delta = cur_tot_wait - self.last_tot_wait
+            self.last_tot_wait = cur_tot_wait
+            return -delta - self.signal_penalty
 
     def get_cur_avg_stay(self):
         l = len(self.cars)

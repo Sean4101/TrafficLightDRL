@@ -20,9 +20,9 @@ class TrafficDRL():
         self.n_steps = 1200
         self.n_train_episodes = 1000
         self.n_episode_per_callback = 50
-        self.save_path = './a_logs/'
+        self.save_path = './h_logs/'
 
-        rf = 2 # Option of 0 ~ 3, each represents different reward function.
+        rf = 6 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
                # minus the traffic signal penalty.
                # (1): The negative of the total time of cars staying in the environment, 
@@ -31,8 +31,9 @@ class TrafficDRL():
                # minus the traffic signal penalty.
                # (3): The negative of the total time of waiting in front of traffic signals, 
                # minus the traffic signal penalty.
+               # (4~7): Delta time equivalent of (0~3)
 
-        env_sys = 2 # Option of 1 ~ 3, represents different environment scale.
+        env_sys = 1 # Option of 1 ~ 3, represents different environment scale.
                 # (1): 1 crossroads, 1 master signals, 2 paths. each has a length of 400 meters.
                 # (2): 4 crossroads, 4 master signals, 4 paths. each has a length of 600 meters.
                 # (3): 9 crossroads, 9 master signals, 6 paths. each has a length of 600 meters.
@@ -65,7 +66,7 @@ class TrafficDRL():
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            print(reward)
+            print(action)
         self.env.render(close=True)
 
 test_flow_sets = [[10, 10],
@@ -79,17 +80,18 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    '''
+    
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    '''
+    
 
     # For Testing
-    
+    '''
     drl_app.model.set_env(drl_app.env)
-    model = '/a__120000_steps.zip'
+    model = '/a__1200000_steps.zip'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=[10, 10, 10, 10, 10, 10])
+    drl_app.test(flow=[10, 0, 10, 11, 10, 10])
+    '''
     
     #excel for stay
     '''
