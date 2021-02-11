@@ -146,7 +146,7 @@ if __name__ == '__main__':
         ws1.append(data)
 
     c1 = openpyxl.chart.LineChart()
-    data = openpyxl.chart.Reference(ws1, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=6+len(test_flow_sets)*(test_time+2)) 
+    data = openpyxl.chart.Reference(ws1, min_col=1, min_row=3+len(test_flow_sets)*(test_time+2), max_col=model_num+1, max_row=2+len(test_flow_sets)+len(test_flow_sets)*(test_time+2)) 
     c1.add_data(data, titles_from_data=True)
     s1 = c1.series[0]
     s2 = c1.series[1]
