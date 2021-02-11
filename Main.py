@@ -20,10 +20,10 @@ class TrafficDRL():
         self.n_steps = 1200
         self.n_train_episodes = 3000 # change to 3000 if es=2
         self.n_episode_per_callback = 150 # change to 150 if es=2
-        self.save_path = './models2/rf5/es2/models_pen=10/'
+        self.save_path = './models2/rf7/es2/models_pen=10/'
         #self.excel_save_path = './models2/rf5/es2/excel/'
 
-        rf = 5 # Option of 0 ~ 7, each represents different reward function.
+        rf = 7 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
                # minus the traffic signal penalty.
                # (1): The negative of the total time of cars staying in the environment, 
@@ -174,7 +174,7 @@ if __name__ == '__main__':
 
 
     ws1.add_chart(c1, "O1")
-    wb1.save("stay.xlsx")
+    wb1.save("stay 7 2.xlsx")
     
     
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     s21 = c1.series[20]
 
     ws2.add_chart(c1, "O1")
-    wb2.save(  "wait.xlsx")
+    wb2.save(  "wait 7 2.xlsx")
     print("finish")
     
     os._exit(app.exec_())
