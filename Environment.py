@@ -85,8 +85,8 @@ class TrafficDRL_Env(gym.Env):
         self.makeAction(action)
         for i in range(10*SEC_EACH_STEP):
             self.update() # update every object and sum up penalty
-            if self.isRendering:
-                self.update_render()
+            #if self.isRendering:
+            #    self.update_render()
         finished = self.timer>=self.episode_len
         state_ = self.calculateState()
         reward = self.calculateReward()

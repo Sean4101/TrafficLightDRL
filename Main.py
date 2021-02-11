@@ -18,11 +18,12 @@ class TrafficDRL():
         self.widget = mainWidget()
 
         self.n_steps = 1200
-        self.n_train_episodes = 1000 # change to 3000 if es=2
-        self.n_episode_per_callback = 50 # change to 150 if es=2
-        self.save_path = './models/rf6/es1/models_pen=10/'
+        self.n_train_episodes = 3000 # change to 3000 if es=2
+        self.n_episode_per_callback = 150 # change to 150 if es=2
+        self.save_path = './models2/rf5/es2/models_pen=10/'
+        #self.excel_save_path = './models2/rf5/es2/excel/'
 
-        rf = 6 # Option of 0 ~ 7, each represents different reward function.
+        rf = 5 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
                # minus the traffic signal penalty.
                # (1): The negative of the total time of cars staying in the environment, 
@@ -33,7 +34,7 @@ class TrafficDRL():
                # minus the traffic signal penalty.
                # (4~7): Delta time equivalent of (0~3)
 
-        env_sys = 1 # Option of 1 ~ 3, represents different environment scale.
+        env_sys = 2 # Option of 1 ~ 3, represents different environment scale.
                 # (1): 1 crossroads, 1 master signals, 2 paths. each has a length of 400 meters.
                 # (2): 4 crossroads, 4 master signals, 4 paths. each has a length of 600 meters.
                 # (3): 9 crossroads, 9 master signals, 6 paths. each has a length of 600 meters.
@@ -66,13 +67,22 @@ class TrafficDRL():
         while not self.test_done:
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action)
-            print(action)
+            #print(action)
         self.env.render(close=True)
 
-test_flow_sets = [[10, 10],
+'''test_flow_sets = [[10, 10],
                   [5, 15],
                   [15, 5],
-                  [20, 20]]
+                  [20, 20]]'''
+
+test_flow_sets = [[10, 10, 10, 10],
+                  [5, 5, 15, 15],
+                  [15, 15, 5, 5],
+                  [15, 5, 15, 5],
+                  [5, 15, 5, 15],
+                  [15, 5, 15, 5],
+                  [5, 15, 5, 15],
+                  [20, 20, 20, 20]]
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -86,52 +96,52 @@ if __name__ == '__main__':
     '''
 
     # For Testing
-    
+    '''
     drl_app.model.set_env(drl_app.env)
-    model = '/a__1200000_steps.zip'
+    model = '/a__60000_steps'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=[0, 20, 10, 11, 10, 10])
-    
+    drl_app.test(flow=[20, 10, 11, 10])
+    '''
     
     #excel for stay
-    '''
-    model_num = 11
+    
+    model_num = 21
     test_time = 5
-    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     all_avg_data = []
     percentage = 1
     wb1 = openpyxl.Workbook()
     ws1 = wb1.active
-    ws1.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws1.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10", "t11", "t12", "t13", "t14", "t15", "t16", "t17", "t18", "t19", "t20"])
     
     for i, flows in enumerate(test_flow_sets):
         for j in range(test_time):
             for k in range(model_num):
-                model = '/a__' + str(k*24000) + '_steps.zip'
+                model = '/a__' + str(k*drl_app.n_steps*drl_app.n_episode_per_callback) + '_steps.zip'
                 drl_app.model = PPO.load(drl_app.save_path + str(model))
                 drl_app.test(flow=flows)
                 print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets))*100 , 4))+" %------")
                 percentage += 1
     number = 2
     for i, data in enumerate(all_stay_data):
-        j = ((i+11)%11)+1
+        j = ((i+model_num)%model_num)+1
         lists[j-1] = data
         avg_list[j] += data
 
-        if (i+1)%11 == 0:
+        if (i+1)%model_num == 0:
             ws1.append(lists)
 
-        if (i+1)%(11*test_time) == 0:
-            for i in range(1, 12):
-                avg_list[i]/=5
+        if (i+1)%(model_num*test_time) == 0:
+            for i in range(1, model_num+1):
+                avg_list[i]/=test_time
             ws1.append(avg_list)
             all_avg_data.append(avg_list)
-            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ws1.append(["-"])
             number += 1
 
-    ws1.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws1.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10", "t11", "t12", "t13", "t14", "t15", "t16", "t17", "t18", "t19", "t20"])
     for data in all_avg_data:
         ws1.append(data)
 
@@ -149,42 +159,53 @@ if __name__ == '__main__':
     s9 = c1.series[8]
     s10 = c1.series[9]
     s11 = c1.series[10]
+    s12 = c1.series[11]
+    s13 = c1.series[12]
+    s14 = c1.series[13]
+    s15 = c1.series[14]
+    s16 = c1.series[15]
+    s17 = c1.series[16]
+    s18 = c1.series[17]
+    s19 = c1.series[18]
+    s20 = c1.series[19]
+    s21 = c1.series[20]
+
+
+
 
     ws1.add_chart(c1, "O1")
-    wb.save("sample1.xlsx")
-    #print("finish")
+    wb1.save("stay.xlsx")
+    
     
 
     #excel for wait
-    model_num = 11
-    test_time = 5
-    avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    avg_list = ["fs1",0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    lists = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     all_avg_data = []
     percentage = 1
     wb2 = openpyxl.Workbook()
     ws2 = wb2.active
-    ws2.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws2.append(["t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10", "t11", "t12", "t13", "t14", "t15", "t16", "t17", "t18", "t19", "t20"])
 
     number = 2
     for i, data in enumerate(all_wait_data):
-        j = ((i+11)%11)+1
+        j = ((i+model_num)%model_num)+1
         lists[j-1] = data
         avg_list[j] += data
 
-        if (i+1)%11 == 0:
+        if (i+1)%model_num == 0:
             ws2.append(lists)
 
-        if (i+1)%(11*test_time) == 0:
-            for i in range(1, 12):
-                avg_list[i]/=5
+        if (i+1)%(model_num*test_time) == 0:
+            for i in range(1, model_num+1):
+                avg_list[i]/=test_time
             ws2.append(avg_list)
             all_avg_data.append(avg_list)
-            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            avg_list = ["fs"+str(number), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             ws2.append(["-"])
             number += 1
 
-    ws2.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10"])
+    ws2.append([" ","t0","t1","t2","t3","t4","t5","t6","t7","t8","t9","t10", "t11", "t12", "t13","t14", "t15", "t16", "t17",  "t18", "t19", "t20"])
     for data in all_avg_data:
         ws2.append(data)
 
@@ -202,8 +223,19 @@ if __name__ == '__main__':
     s9 = c1.series[8]
     s10 = c1.series[9]
     s11 = c1.series[10]
+    s12 = c1.series[11]
+    s13 = c1.series[12]
+    s14 = c1.series[13]
+    s15 = c1.series[14]
+    s16 = c1.series[15]
+    s17 = c1.series[16]
+    s18 = c1.series[17]
+    s19 = c1.series[18]
+    s20 = c1.series[19]
+    s21 = c1.series[20]
 
     ws2.add_chart(c1, "O1")
-    wb.save("sample2.xlsx")
-    '''
+    wb2.save(  "wait.xlsx")
+    print("finish")
+    
     os._exit(app.exec_())
