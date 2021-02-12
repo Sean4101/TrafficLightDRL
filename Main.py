@@ -18,12 +18,12 @@ class TrafficDRL():
         self.widget = mainWidget()
 
         self.n_steps = 1200
-        self.n_train_episodes = 3000 # change to 3000 if es=2
-        self.n_episode_per_callback = 150 # change to 150 if es=2
-        self.save_path = './models2/rf7/es2/models_pen=10/'
+        self.n_train_episodes = 500 # change to 3000 if es=2
+        self.n_episode_per_callback = 10 # change to 150 if es=2
+        self.save_path = './models3/rf5,es2/gamma=0.9/'
         #self.excel_save_path = './models2/rf5/es2/excel/'
 
-        rf = 7 # Option of 0 ~ 7, each represents different reward function.
+        rf = 5 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
                # minus the traffic signal penalty.
                # (1): The negative of the total time of cars staying in the environment, 
@@ -56,7 +56,7 @@ class TrafficDRL():
             n_steps=self.n_steps,
             learning_rate=3e-4,
             ent_coef=0.5,
-            gamma=0.95,
+            gamma=0.9,
             tensorboard_log="./tensorboard/"
         )
 
@@ -90,10 +90,10 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    '''
+    
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    '''
+    
 
     # For Testing
     '''
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     '''
     
     #excel for stay
-    
+    '''
     model_num = 21
     test_time = 5
     avg_list = ["fs1", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -237,5 +237,5 @@ if __name__ == '__main__':
     ws2.add_chart(c1, "O1")
     wb2.save(  "wait 7 2.xlsx")
     print("finish")
-    
+    '''
     os._exit(app.exec_())
