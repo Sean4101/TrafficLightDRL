@@ -1,0 +1,3 @@
+conda activate MachineLearning2
+cd C:\Users\seanc\Anaconda3\envs\MachineLearning2\TrafficSignalDRL
+python Main.py

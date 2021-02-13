@@ -20,7 +20,7 @@ class TrafficDRL():
         self.n_steps = 1200
         self.n_train_episodes = 500 # change to 3000 if es=2
         self.n_episode_per_callback = 10 # change to 150 if es=2
-        self.save_path = './models3/rf5,es2/gamma=0.9/'
+        self.save_path = './models3/rf5,es2/ent_coef=0.01/'
         #self.excel_save_path = './models2/rf5/es2/excel/'
 
         rf = 5 # Option of 0 ~ 7, each represents different reward function.
@@ -55,8 +55,8 @@ class TrafficDRL():
             verbose=1,
             n_steps=self.n_steps,
             learning_rate=3e-4,
-            ent_coef=0.5,
-            gamma=0.9,
+            ent_coef=0.0,
+            gamma=0.95,
             tensorboard_log="./tensorboard/"
         )
 
@@ -90,18 +90,18 @@ if __name__ == '__main__':
     drl_app.widget.show()
     
     # For Training
-    
+    '''
     drl_app.model.save(drl_app.save_path+'/a__0_steps')
     drl_app.model.learn(drl_app.n_train_episodes*drl_app.n_steps, drl_app.checkpoint_callback)
-    
+    '''
 
     # For Testing
-    '''
+    
     drl_app.model.set_env(drl_app.env)
-    model = '/a__60000_steps'
+    model = '/a__600000_steps'
     drl_app.model = PPO.load(drl_app.save_path + str(model))
-    drl_app.test(flow=[20, 10, 11, 10])
-    '''
+    drl_app.test(flow=[0, 0, 20, 10])
+    
     
     #excel for stay
     '''
