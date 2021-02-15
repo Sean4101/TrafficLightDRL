@@ -19,7 +19,7 @@ class TrafficDRL():
         self.n_steps = 1200
         self.n_train_episodes = 3000 # change to 3000 if es=2
         self.n_episode_per_callback = 150 # change to 150 if es=2
-        self.save_path = './models3/rf5,es2/ent_coef=0.01/'
+        self.save_path = './models3/rf5,es2/ent_coef=0.5/'
         #self.excel_save_path = './models2/rf5/es2/excel/'
 
         rf = 5 # Option of 0 ~ 7, each represents different reward function.
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     test_time = 5
     avg_list = [0] * (model_num+1)
     avg_list[0] = "fs1"
-    lists = [0] * (model_num+1)
+    lists = [0] * (model_num)
     all_avg_data = []
     tlist = []
     tblanklist = []
@@ -159,12 +159,12 @@ if __name__ == '__main__':
     c1.add_data(data, titles_from_data=True)
 
     ws1.add_chart(c1, "O1")
-    wb1.save("stay .xlsx")
+    wb1.save("stay0_5.xlsx")
     
     #excel for wait
     avg_list = [0] * (model_num+1)
     avg_list[0] = "fs1"
-    lists = [0] * (model_num+1)
+    lists = [0] * (model_num)
     all_avg_data = []
     tlist = []
     tblanklist = []
@@ -201,7 +201,7 @@ if __name__ == '__main__':
     c1.add_data(data, titles_from_data=True)
 
     ws2.add_chart(c1, "O1")
-    wb2.save(  "wait .xlsx")
+    wb2.save(  "wait0_5.xlsx")
     print("finish")
     
     os._exit(app.exec_())
