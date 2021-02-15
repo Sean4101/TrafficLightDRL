@@ -16,7 +16,6 @@ from Environment import  all_stay_data, all_wait_data
 class TrafficDRL():
     def __init__(self):
         self.widget = mainWidget()
-        self.model_num = 10
         self.n_steps = 1200
         self.n_train_episodes = 3000 # change to 3000 if es=2
         self.n_episode_per_callback = 150 # change to 150 if es=2
@@ -105,7 +104,8 @@ if __name__ == '__main__':
     
     #excel for stay
     
-    model_num = drl_app.model_num
+    model_num = 11
+    tests_per_step = 60000
     test_time = 5
     avg_list = [0] * (model_num+1)
     avg_list[0] = "fs1"
@@ -126,7 +126,7 @@ if __name__ == '__main__':
     for i, flows in enumerate(test_flow_sets):
         for j in range(test_time):
             for k in range(model_num):
-                model = '/a__' + str(k*12000) + '_steps.zip'
+                model = '/a__' + str(k*tests_per_step) + '_steps.zip'
                 drl_app.model = PPO.load(drl_app.save_path + str(model))
                 drl_app.test(flow=flows)
                 print("------"+str(round(percentage/((model_num*test_time)*len(test_flow_sets))*100 , 4))+" %------")
@@ -162,8 +162,6 @@ if __name__ == '__main__':
     wb1.save("stay .xlsx")
     
     #excel for wait
-    model_num = 10
-    test_time = 5
     avg_list = [0] * (model_num+1)
     avg_list[0] = "fs1"
     lists = [0] * (model_num+1)
