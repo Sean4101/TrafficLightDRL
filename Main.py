@@ -17,10 +17,9 @@ class TrafficDRL():
     def __init__(self):
         self.widget = mainWidget()
         self.n_steps = 1200
-        self.n_train_episodes = 3000 # change to 3000 if es=2
-        self.n_episode_per_callback = 150 # change to 150 if es=2
-        self.save_path = './models3/rf5,es2/ent_coef=0.5/'
-        #self.excel_save_path = './models2/rf5/es2/excel/'
+        self.n_train_episodes = 500 # change to 3000 if es=2
+        self.n_episode_per_callback = 50 # change to 150 if es=2
+        self.save_path = './models4/rf5,es2/ent_coef=0.0/gamma=0.9999/'
 
         rf = 5 # Option of 0 ~ 7, each represents different reward function.
                # (0): The negative of the average time of cars staying in the environment, 
@@ -55,7 +54,7 @@ class TrafficDRL():
             n_steps=self.n_steps,
             learning_rate=3e-4,
             ent_coef=0.0,
-            gamma=0.95,
+            gamma=0.9999,
             tensorboard_log="./tensorboard/"
         )
 
@@ -159,7 +158,7 @@ if __name__ == '__main__':
     c1.add_data(data, titles_from_data=True)
 
     ws1.add_chart(c1, "O1")
-    wb1.save("stay0_5.xlsx")
+    wb1.save("stay5_2_0.9999.xlsx")
     
     #excel for wait
     avg_list = [0] * (model_num+1)
@@ -201,7 +200,7 @@ if __name__ == '__main__':
     c1.add_data(data, titles_from_data=True)
 
     ws2.add_chart(c1, "O1")
-    wb2.save(  "wait0_5.xlsx")
+    wb2.save(  "wait5_2_0.9999.xlsx")
     print("finish")
     
     os._exit(app.exec_())
