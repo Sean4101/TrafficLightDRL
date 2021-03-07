@@ -16,15 +16,16 @@ FLOW_MAX = 20
 UPDATE_DUR = 0.1
 SEC_EACH_STEP = 3
 
-all_test_data = []
-each_test_data = []
-
 all_stay_data = []
 all_wait_data = []
 
+
+red_light_time_list = []
 class TrafficDRL_Env(gym.Env):
     def __init__(self, reward_function, env_sys, render_scene=None, n_steps=3600/SEC_EACH_STEP):
         super(TrafficDRL_Env, self).__init__()
+
+        
 
         self.reward_function = reward_function
         self.env_sys = env_sys
@@ -44,10 +45,15 @@ class TrafficDRL_Env(gym.Env):
         self.isRendering = False
         self.scale = 1
 
-    def reset(self, fixed_flow=None, isTest=False):
+        
+        self.all_light_time_data = []
+
+    def reset(self, fixed_flow=None, isTest=False, run_forever=False, delay=False):
         self.isTest = isTest
         self.timer = 0
         self.episode_len = self.n_steps * SEC_EACH_STEP
+        self.run_forever = run_forever
+        self.delay = delay
         self.buildEnvSys()
 
         self.cars = []
@@ -66,6 +72,10 @@ class TrafficDRL_Env(gym.Env):
         self.n_exit_cars = 0
         self.signal_penalty = 0
 
+        
+        self.tot_red_light_time = [0] * self.n_action
+        
+
         if fixed_flow == None:
             flows = np.random.randint(FLOW_MIN, high=FLOW_MAX, size=(len(self.paths)))
         else:
@@ -80,14 +90,22 @@ class TrafficDRL_Env(gym.Env):
         first_state = self.calculateState()
         return first_state
 
-    def step(self, action):
+    def step(self, action, delay_):
         self.signal_penalty = 0
         self.makeAction(action)
+
+        for i, signal in enumerate(self.master_signals):
+            if action[i] == 0:
+                self.tot_red_light_time[i] += 3
+
         for i in range(10*SEC_EACH_STEP):
             self.update() # update every object and sum up penalty
+            if self.delay:
+                
+                time.sleep(delay_)
             if self.isRendering:
                 self.update_render()
-        finished = self.timer>=self.episode_len
+        finished = self.timer>=self.episode_len if self.run_forever == False else False
         state_ = self.calculateState()
         reward = self.calculateReward()
         done = finished
@@ -97,10 +115,21 @@ class TrafficDRL_Env(gym.Env):
                 self.avg_staying_time = (self.avg_staying_time*self.tot_car_cnt + (self.timer - car.start_time))/(self.tot_car_cnt+1)
                 self.avg_waiting_time = (self.avg_waiting_time*self.tot_car_cnt + car.tot_wait_time)/(self.tot_car_cnt+1)
                 self.tot_car_cnt += 1
-            print(self.avg_staying_time, end='\t')
-            print(self.avg_waiting_time)
+            print(self.avg_staying_time)
+            #print(self.avg_waiting_time)
+            #print(state_)
             all_stay_data.append(self.avg_staying_time)
             all_wait_data.append(self.avg_waiting_time)
+
+            red_list = ["red"]
+            green_list = ["green"]
+            for data in self.tot_red_light_time:
+                red_list.append(data)
+                green_list.append(3600-data)
+
+            self.all_light_time_data.append(red_list)
+            self.all_light_time_data.append(green_list)
+            self.all_light_time_data.append([" "])
 
         return state_, reward, done, info
 
@@ -115,13 +144,14 @@ class TrafficDRL_Env(gym.Env):
             addRoad(), addPath() in this method to 
             create your traffic system. '''
 
+        
         self.intersections = []
         self.roads = []
         self.paths = []
         self.signals = []
         self.cars = []
         self.master_signals = []
-        
+
         if self.env_sys == 1:
             s1m = self.addTrafficSignal(Signals.RED, True)
             s1s = self.addTrafficSignal(Signals.RED, master=s1m)
@@ -318,6 +348,7 @@ class TrafficDRL_Env(gym.Env):
             state[i*STATE_EACH_ROAD+ 1] = len(road.cars)
         for j, signal in enumerate(self.signals):
             state[len(self.roads)*STATE_EACH_ROAD + j] = signal.light_timer if signal.signal == Signals.RED else 0
+            
         return state
 
     def calculateReward(self):
@@ -349,6 +380,12 @@ class TrafficDRL_Env(gym.Env):
             delta = cur_tot_wait - self.last_tot_wait
             self.last_tot_wait = cur_tot_wait
             return -delta - self.signal_penalty
+
+    def change_flow(self, fixed_flow):
+        flows = fixed_flow
+
+        for i, path in enumerate(self.paths):
+            path.flow = flows[i]
 
     def get_cur_avg_stay(self):
         l = len(self.cars)
