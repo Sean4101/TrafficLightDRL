@@ -78,6 +78,7 @@ class fixed_time_system_model():
         self.env.render(close=True)
     
     def fixed_time_system_model_collect_data(self, flow):
+        '''
         all_data_list = []
         tmp_list = []
         tmp_stay_sum = 0
@@ -108,6 +109,7 @@ class fixed_time_system_model():
         for data in all_data_list:
             ws4.append(data)
         wb4.save(" fixed_time_system_model_collect_data [15, 5] sys 1.xlsx")
+        '''
 
     def collect_action_and_avg_staytime(self, render=False):
         wb5 = openpyxl.Workbook()
@@ -156,16 +158,17 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     fts_app = fixed_time_system_model()
     fts_app.widget.show()
-    
+
+    '''    to test which is the best pair of green light and red light    '''
+    '''
     i = 36
     print(i)
     sum_ = 0
     for k in range(12, 37, 3):
         fts_app.test(i,k, [15, 5], render=False)
+    '''
     
     #fts_app.collect_action_and_avg_staytime()
-
-    #fts_app.fixed_time_system_model_collect_data(flow=[15, 5, 15, 5])
 
     print("finish")
     

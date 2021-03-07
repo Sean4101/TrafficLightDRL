@@ -21,7 +21,7 @@ class TrafficDRL():
         self.n_steps = 1200
         self.n_train_episodes = 500 # change to 3000 if es=2
         self.n_episode_per_callback = 50 # change to 150 if es=2
-        self.save_path = './models4/rf5,es2/ent_coef=0.0/gamma=0.9999/'
+        self.save_path = './models3/rf5,es2/ent_coef=0/'
         self.stay_excel_name = "stay fixed_time.xlsx"
         self.wait_excel_name = "wait fixed time.xlsx"
 
@@ -269,7 +269,7 @@ class TrafficDRL():
         self.test_done = False
         for i in range(400):
             if i == 200:
-                self.env.change_flow([15, 5 ,15, 5])
+                self.env.change_flow([20, 20, 0, 0])
             action, _states = self.model.predict(obs, deterministic=True)
             obs, reward, self.test_done, info = self.env.step(action, delay)
             print(action)
@@ -284,7 +284,7 @@ class TrafficDRL():
         for data in action_list:
             ws5.append(data)
         ws5.append(last_avg_stay_list)
-        wb5.save( "action_and_avg_staytime [10, 10, 10, 10]  [15, 5, 15, 5] sys 2 trained gamma=0.95.xlsx")
+        wb5.save( "action_and_avg_staytime [10, 10, 10, 10]  [20, 20, 0, 0] sys 2 trained gamma=0.95.xlsx")
 
     
 
@@ -311,39 +311,37 @@ if __name__ == '__main__':
     drl_app = TrafficDRL()
     drl_app.widget.show()
 
-    #=================================
+    '''=================================  real time test '''
 
-    # real time test
     #drl_app.real_time(render=True)
-    #=================================
 
-    ''' train and test '''
-    # For Training
+    '''=================================  train and test '''
+
+    
+    #    For Training the model
+    
     #drl_app.Training()
 
-    # For Testing
+    #    For Testing
 
-    '''
-    if drl_app.use_fixed_time_system:
-        drl_app.test(fixed_time_red_light_time=18)
-    else:
-        drl_app.Testing()
-    '''
+    #drl_app.Testing()
+    
 
-    #=================================
+    '''=================================  collecting datas '''
 
-    ''' collecting datas '''
-    # collecting data for stay and wait
+
     #drl_app.collecting_data_for_stay_and_wait()
 
-    # collecting red light time data
     #drl_app.collecting_red_light_time()
+
+    #drl_app.collect_action_and_avg_staytime(render=False)
+    
 
     #=================================
 
-    #drl_app.fixed_time_system_model_collect_data()
 
-    drl_app.collect_action_and_avg_staytime(render=False)
+    
+
     print("finish")
     
     os._exit(app.exec_())
